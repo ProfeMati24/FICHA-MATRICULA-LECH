@@ -9,6 +9,9 @@
 - Se crea el documento guía para la construcción del proyecto, junto con el primer mockup.
 - Se arma el documento de requerimientos `Matricula(1).txt` (v0.4). Es una fuente importante para los requerimientos, pero antigua. Algunas de sus decisiones fueron reemplazadas posteriormente.
 
+<img width="1348" height="604" alt="image" src="https://github.com/user-attachments/assets/a2ac8a29-2d73-406e-831b-40e3ba49131f" />
+
+
 ## 17-11-2026
 
 - Se crea el archivo `buscadorEstablecimientos.js` y se discuten decisiones de diseño.
@@ -37,3 +40,5 @@
   - **PDF de condiciones:** adjuntar e integrar el documento formal de condiciones del establecimiento.
   - **Mejora del archivo Excel:** optimizar la estructura y formato de exportación global.
   - **Ampliación de niveles (Post-habilitación):** una vez que todo el sistema base esté operativo, añadir el soporte e inscripción para los cursos de **2°, 3° y 4° Medio**.
+ 
+  <img width="1349" height="606" alt="image" src="https://github.com/user-attachments/assets/cbf0580f-9a30-4d47-9e18-bda9a99c9786" />
