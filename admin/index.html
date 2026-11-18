@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin · Matrículas</title>
+<!-- Script para aplicar el tema guardado al instante y evitar parpadeos -->
+<script>
+  (function(){
+    var t = localStorage.getItem("charme-tema");
+    if (t) document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -33,6 +40,10 @@
     <a class="btn" href="../index.html"><i data-lucide="arrow-left"></i> Formulario</a>
     <button class="btn" id="btn-excel" title="Descarga todos los postulantes en un .xlsx">
       <i data-lucide="file-spreadsheet"></i> Excel global
+    </button>
+    <!-- Botón de cambio de modo (claro/oscuro) -->
+    <button class="btn" id="btn-tema" title="Cambiar tema claro/oscuro">
+      <i data-lucide="moon"></i>
     </button>
     <button class="btn btn-peligro" id="btn-salir" title="Salir"><i data-lucide="log-out"></i></button>
   </header>
@@ -99,6 +110,29 @@
   </div>
 </div>
 
+<!-- Script para la interactividad del botón de tema -->
+<script>
+  (function(){
+    var root = document.documentElement;
+    var btn = document.getElementById("btn-tema");
+    if (!btn) return;
+    function estaOscuro(){
+      return root.getAttribute("data-theme") === "dark" ||
+        (!root.getAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    }
+    function pintarIcono(){
+      btn.innerHTML = estaOscuro() ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+      if (window.lucide) lucide.createIcons();
+    }
+    btn.addEventListener("click", function(){
+      var nuevo = estaOscuro() ? "light" : "dark";
+      root.setAttribute("data-theme", nuevo);
+      localStorage.setItem("charme-tema", nuevo);
+      pintarIcono();
+    });
+    pintarIcono();
+  })();
+</script>
 <script type="module" src="admin.js"></script>
 </body>
 </html>
