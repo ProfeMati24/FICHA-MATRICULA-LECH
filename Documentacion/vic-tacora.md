@@ -40,6 +40,7 @@
   - **PDF de condiciones:** adjuntar e integrar el documento formal de condiciones del establecimiento.
   - **Mejora del archivo Excel:** optimizar la estructura y formato de exportación global.
   - **Ampliación de niveles (Post-habilitación):** una vez que todo el sistema base esté operativo, añadir el soporte e inscripción para los cursos de **2°, 3° y 4° Medio**.
+
  
   <img width="1349" height="606" alt="image" src="https://github.com/user-attachments/assets/cbf0580f-9a30-4d47-9e18-bda9a99c9786" />
 
