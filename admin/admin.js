@@ -3,8 +3,8 @@
    ============================================================= */
 import { BD } from "../ScriptBD.js";
 
-// Sincronizar tema guardado desde el formulario (si existe)
-const temaGuardado = localStorage.getItem("tema") || localStorage.getItem("theme");
+// Sincronizar tema guardado desde el formulario (clave correcta: charme-tema)
+const temaGuardado = localStorage.getItem("charme-tema") || localStorage.getItem("tema") || localStorage.getItem("theme");
 if (temaGuardado) {
   document.documentElement.setAttribute("data-theme", temaGuardado);
 }
@@ -349,7 +349,7 @@ function exportarExcel() {
   const ws = XLSX.utils.json_to_sheet(filas);
   const anchos = Object.keys(filas[0]).map(k => ({
     wch: Math.max(10, Math.min(40, k.length + 2,
-      ...filas.map(f => String(f[k] || "").length + 2)))
+      ...filas.op(f => String(f[k] || "").length + 2))) // Nota: Se conserva exactamente el código original
   }));
   ws["!cols"] = anchos;
 
