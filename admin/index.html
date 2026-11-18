@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Matrículas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login">
+  <div class="login-card">
+    <h1><i data-lucide="shield"></i> Panel Admin</h1>
+    <p>Liceo Eduardo Charme · Matrículas</p>
+    <input type="password" id="pwd" class="login-input" maxlength="8" placeholder="••••" autofocus>
+    <button class="login-btn" id="btn-login"><i data-lucide="log-in"></i> Entrar</button>
+    <div class="login-error" id="login-error">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="admin" id="admin">
+  <header class="topbar">
+    <h1><i data-lucide="layout-dashboard"></i> Panel de Administración</h1>
+    <div class="spacer"></div>
+    <div id="estado-conexion" class="estado-conexion"></div>
+    <button class="btn" id="btn-conectar"><i data-lucide="folder-open"></i> Conectar carpeta</button>
+    <a class="btn" href="../index.html"><i data-lucide="arrow-left"></i> Formulario</a>
+    <button class="btn" id="btn-excel" title="Descarga todos los postulantes en un .xlsx">
+      <i data-lucide="file-spreadsheet"></i> Excel global
+    </button>
+    <button class="btn btn-peligro" id="btn-salir" title="Salir"><i data-lucide="log-out"></i></button>
+  </header>
+
+  <main class="main">
+    <!-- Filtros -->
+    <section class="panel">
+      <div class="panel-head"><i data-lucide="filter"></i> Postulantes</div>
+      <div class="panel-body">
+        <div class="filtros">
+          <div class="campo">
+            <label>Buscar</label>
+            <input type="text" id="f-buscar" placeholder="Nombre, RUT, fono…">
+          </div>
+          <div class="campo">
+            <label>Año</label>
+            <select id="f-anio"><option value="">Todos</option></select>
+          </div>
+          <div class="campo">
+            <label>Establecimiento</label>
+            <select id="f-establecimiento"><option value="">Todos</option></select>
+          </div>
+          <div class="campo">
+            <label>Estado</label>
+            <select id="f-estado"><option value="">Todos</option></select>
+          </div>
+          <button class="btn" id="btn-limpiar-filtros" title="Limpiar filtros"><i data-lucide="x"></i></button>
+        </div>
+        <div class="contador" id="contador">—</div>
+      </div>
+    </section>
+
+    <!-- Tabla -->
+    <section class="panel">
+      <div class="tabla-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>N°</th><th>Año</th><th>Alumno</th><th>RUT</th>
+              <th>Establecimiento</th><th>Estado</th><th>Creado</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="m-titulo">Detalle</h2>
+      <button class="btn" id="m-cerrar"><i data-lucide="x"></i></button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-peligro" id="m-eliminar" style="margin-right:auto"><i data-lucide="trash-2"></i> Eliminar</button>
+      <button class="btn" id="m-cerrar-2">Cerrar</button>
+      <button class="btn" id="m-pdf"><i data-lucide="file-text"></i> Descargar PDF</button>
+      <button class="btn btn-primario" id="m-guardar"><i data-lucide="save"></i> Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="admin.js"></script>
+</body>
+</html>

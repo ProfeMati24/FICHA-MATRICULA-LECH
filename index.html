@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matrículas · Liceo Eduardo Charme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<script>
+  (function(){
+    var t = localStorage.getItem("charme-tema");
+    if (t) document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-marca">
+    <div class="topbar-logo"><i data-lucide="graduation-cap"></i></div>
+    <div class="topbar-marca-texto">
+      <strong>Liceo Eduardo Charme</strong>
+      <span>San Fernando · Chile</span>
+    </div>
+  </div>
+  <div class="topbar-spacer"></div>
+  <div id="estado-conexion" class="estado-conexion"></div>
+  <button id="btn-conectar" type="button" class="btn-conexion">
+    <i data-lucide="folder-open"></i> Conectar carpeta
+  </button>
+  <button id="btn-tema" type="button" class="btn-tema" aria-label="Cambiar tema claro/oscuro" title="Cambiar tema">
+    <i data-lucide="moon"></i>
+  </button>
+  <a href="admin/index.html" class="btn-admin"><i data-lucide="shield"></i> Admin</a>
+</header>
+
+<main class="main">
+  <div class="panel-cabecera">
+    <h1><i data-lucide="file-pen-line"></i> Formulario de Matrícula</h1>
+    <p>Ingreso a <strong>Primero Medio</strong> · Complete todos los bloques para registrar al alumno</p>
+  </div>
+
+  <form id="form-matricula" novalidate>
+
+    <!-- BLOQUE 1 -->
+    <section class="bloque" id="bloque-alumno">
+      <header class="bloque-head">
+        <div class="bloque-num">1</div>
+        <div class="bloque-titulo">
+          <strong><i data-lucide="user"></i> Datos del Alumno</strong>
+          <span>Información personal del postulante</span>
+        </div>
+      </header>
+      <div class="bloque-body">
+        <div class="grid-3">
+          <div class="campo">
+            <label>Curso</label>
+            <input type="text" value="Primero Medio" readonly>
+            <div class="campo-ayuda"><i data-lucide="info"></i> Fijo · Solo ingreso a 1° Medio</div>
+          </div>
+          <div class="campo">
+            <label>Año escolar</label>
+            <select id="a-anio"></select>
+          </div>
+          <div class="campo">
+            <label>N° de matrícula</label>
+            <input type="text" id="a-numero" class="auto" readonly value="—">
+            <div class="campo-ayuda"><i data-lucide="hash"></i> Autoincremental</div>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="campo">
+            <label>Apellido paterno <span class="req">*</span></label>
+            <input type="text" id="a-apellido-paterno" placeholder="González">
+          </div>
+          <div class="campo">
+            <label>Apellido materno <span class="req">*</span></label>
+            <input type="text" id="a-apellido-materno" placeholder="Pérez">
+          </div>
+          <div class="campo">
+            <label>Nombres <span class="req">*</span></label>
+            <input type="text" id="a-nombres" placeholder="María José">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="campo">
+            <label>R.U.T <span class="req">*</span></label>
+            <input type="text" id="a-rut" placeholder="21.345.678-9">
+          </div>
+          <div class="campo">
+            <label>Fecha de nacimiento <span class="req">*</span></label>
+            <input type="date" id="a-nacimiento">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="campo">
+            <label>Vive con <span class="req">*</span></label>
+            <select id="a-vive-con">
+              <option value="">Seleccionar…</option>
+              <option>Madre</option>
+              <option>Padre</option>
+              <option>Ambos</option>
+              <option>Otro familiar</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>Fono de contacto <span class="req">*</span></label>
+            <input type="tel" id="a-fono" placeholder="+56 9 1234 5678">
+          </div>
+        </div>
+
+        <div class="campo full">
+          <label>Domicilio <span class="req">*</span></label>
+          <input type="text" id="a-domicilio" placeholder="Av. Ejemplo 1234, Villa Los Aromos, San Fernando">
+        </div>
+
+        <div class="campo full">
+          <label>Establecimiento anterior <span class="opt">(opcional)</span></label>
+          <input type="text" id="a-establecimiento" list="lista-establecimientos" placeholder="Escribe para buscar…">
+          <datalist id="lista-establecimientos"></datalist>
+        </div>
+
+        <div class="campo full">
+          <label>Antecedentes médicos <span class="opt">(opcional)</span></label>
+          <textarea id="a-medicos" placeholder="Alergias, medicamentos, condiciones crónicas…"></textarea>
+        </div>
+
+        <div class="subseccion">
+          <div class="subseccion-titulo">
+            <i data-lucide="users"></i> Padres <span style="font-weight:500;color:var(--text-muted);text-transform:none;letter-spacing:0;">(ambos opcionales)</span>
+          </div>
+          <div class="grid-2">
+            <div class="campo">
+              <label>Padre <span class="opt">(nombre completo)</span></label>
+              <input type="text" id="a-padre" placeholder="Juan González Ramírez">
+            </div>
+            <div class="campo">
+              <label>Madre <span class="opt">(nombre completo)</span></label>
+              <input type="text" id="a-madre" placeholder="Ana Pérez López">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOQUE 2 -->
+    <section class="bloque" id="bloque-titular">
+      <header class="bloque-head">
+        <div class="bloque-num">2</div>
+        <div class="bloque-titulo">
+          <strong><i data-lucide="user-check"></i> Apoderado Titular</strong>
+          <span>Responsable legal principal</span>
+        </div>
+      </header>
+      <div class="bloque-body">
+        <div class="campo full">
+          <label>Nombre completo <span class="req">*</span></label>
+          <input type="text" id="t-nombre" placeholder="Ana Pérez López">
+        </div>
+        <div class="grid-2">
+          <div class="campo">
+            <label>R.U.T <span class="req">*</span></label>
+            <input type="text" id="t-rut" placeholder="14.567.890-1">
+          </div>
+          <div class="campo">
+            <label>Fono <span class="req">*</span></label>
+            <input type="tel" id="t-fono" placeholder="+56 9 8765 4321">
+          </div>
+        </div>
+        <div class="campo full">
+          <label>Domicilio <span class="req">*</span></label>
+          <input type="text" id="t-domicilio" placeholder="Av. Ejemplo 1234, San Fernando">
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOQUE 3 -->
+    <section class="bloque" id="bloque-suplente">
+      <header class="bloque-head">
+        <div class="bloque-num">3</div>
+        <div class="bloque-titulo">
+          <strong><i data-lucide="users"></i> Apoderado Suplente</strong>
+          <span>Responsable alternativo en ausencia del titular</span>
+        </div>
+      </header>
+      <div class="bloque-body">
+        <div class="campo full">
+          <label>Nombre completo <span class="req">*</span></label>
+          <input type="text" id="s-nombre" placeholder="Juan González Ramírez">
+        </div>
+        <div class="grid-2">
+          <div class="campo">
+            <label>R.U.T <span class="req">*</span></label>
+            <input type="text" id="s-rut" placeholder="9.876.543-2">
+          </div>
+          <div class="campo">
+            <label>Fono <span class="req">*</span></label>
+            <input type="tel" id="s-fono" placeholder="+56 9 5555 1234">
+          </div>
+        </div>
+        <div class="campo full">
+          <label>Domicilio <span class="req">*</span></label>
+          <input type="text" id="s-domicilio" placeholder="Calle Otra 567, San Fernando">
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOQUE 4 -->
+    <section class="bloque" id="bloque-reglas">
+      <header class="bloque-head">
+        <div class="bloque-num">4</div>
+        <div class="bloque-titulo">
+          <strong><i data-lucide="file-text"></i> Términos y Condiciones</strong>
+          <span>Declaración de compromiso al juramento</span>
+        </div>
+      </header>
+      <div class="bloque-body">
+        <div class="pdf-viewer" id="pdf-contenedor">
+          <div class="pdf-toolbar">
+            <i data-lucide="file-text"></i>
+            <strong>reglas.pdf</strong>
+            <span class="pdf-paginas">assets/</span>
+          </div>
+          <div class="pdf-pagina">
+            <h3>Declaración de Compromiso</h3>
+            <div class="pdf-sub">Liceo Eduardo Charme · San Fernando</div>
+            <p>Cargando declaración…</p>
+          </div>
+        </div>
+
+        <label class="aceptar-terminos">
+          <input type="checkbox" id="r-acepto">
+          <span class="check-box"><i data-lucide="check"></i></span>
+          <span class="texto">
+            Acepto los términos y condiciones
+            <span>Debe leer la declaración de compromiso antes de aceptar.</span>
+          </span>
+        </label>
+      </div>
+    </section>
+
+    <!-- BLOQUE 5 -->
+    <section class="bloque" id="bloque-matricula">
+      <header class="bloque-head">
+        <div class="bloque-num">5</div>
+        <div class="bloque-titulo">
+          <strong><i data-lucide="file-signature"></i> Matrícula y Documentos</strong>
+          <span>Registro final y recepción de antecedentes</span>
+        </div>
+      </header>
+      <div class="bloque-body">
+        <div class="aviso-inline">
+          <i data-lucide="sparkles"></i>
+          <span>Los datos a continuación se completan automáticamente al guardar el formulario.</span>
+        </div>
+
+        <div class="matricula-resumen">
+          <div>
+            <strong>Ingreso</strong> al Liceo Eduardo Charme el
+            <strong id="mat-fecha-texto">—</strong>
+            al curso <strong>Primero Medio</strong> — Sección
+            <span class="pill" id="mat-seccion">—</span>
+          </div>
+          <div style="font-size:0.875rem;color:var(--c-n-700);">
+            N° de matrícula: <strong id="mat-numero" style="font-family:var(--font-mono);color:var(--c-gold-800);">—</strong>
+            &nbsp;·&nbsp; Año escolar: <strong id="mat-anio">—</strong>
+          </div>
+        </div>
+
+        <div>
+          <div class="subseccion-titulo" style="margin-bottom:10px;">
+            <i data-lucide="clipboard-check"></i> Documentos recibidos
+          </div>
+          <div class="docs-grid">
+            <label class="doc-item"><input type="checkbox" id="d-nacimiento"><span class="check-box"><i data-lucide="check"></i></span><span class="doc-label">a) Certificado de nacimiento</span></label>
+            <label class="doc-item"><input type="checkbox" id="d-estudio"><span class="check-box"><i data-lucide="check"></i></span><span class="doc-label">b) Certificado de estudio</span></label>
+            <label class="doc-item"><input type="checkbox" id="d-personalidad"><span class="check-box"><i data-lucide="check"></i></span><span class="doc-label">c) Informe de personalidad</span></label>
+            <label class="doc-item"><input type="checkbox" id="d-ficha"><span class="check-box"><i data-lucide="check"></i></span><span class="doc-label">d) Ficha escolar</span></label>
+            <label class="doc-item"><input type="checkbox" id="d-pie"><span class="check-box"><i data-lucide="check"></i></span><span class="doc-label">e) Carpeta PIE</span></label>
+          </div>
+        </div>
+
+        <div class="campo full">
+          <label>Estudiante retirado el <span class="opt">(fecha del colegio anterior)</span></label>
+          <input type="date" id="m-retiro">
+        </div>
+
+        <div class="declaracion">Declaro haber recibido los documentos antes señalados.</div>
+
+        <div style="text-align:right;font-size:0.875rem;color:var(--text-muted);padding:4px 0;">
+          <span id="mat-cierre">—</span>
+        </div>
+
+        <div class="firmas">
+          <div class="firma-item">
+            <div class="firma-linea vacia">firma manuscrita</div>
+            <strong>Firma del Apoderado</strong>
+            <span>Apoderado titular</span>
+          </div>
+          <div class="firma-item">
+            <div class="firma-linea"><div class="firma-svg">R. Charme</div></div>
+            <strong>Firma del Director</strong>
+            <span>Liceo Eduardo Charme</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="form-acciones">
+      <button type="button" class="btn btn-secundario" id="btn-cancelar">
+        <i data-lucide="x"></i> Cancelar
+      </button>
+      <button type="submit" class="btn btn-primario" id="btn-enviar" disabled>
+        <i data-lucide="file-down"></i> Guardar matrícula
+      </button>
+    </div>
+  </form>
+</main>
+
+<script>
+  (function(){
+    var root = document.documentElement;
+    var btn = document.getElementById("btn-tema");
+    function estaOscuro(){
+      return root.getAttribute("data-theme") === "dark" ||
+        (!root.getAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    }
+    function pintarIcono(){
+      btn.innerHTML = estaOscuro() ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+      if (window.lucide) lucide.createIcons();
+    }
+    btn.addEventListener("click", function(){
+      var nuevo = estaOscuro() ? "light" : "dark";
+      root.setAttribute("data-theme", nuevo);
+      localStorage.setItem("charme-tema", nuevo);
+      pintarIcono();
+    });
+    pintarIcono();
+  })();
+</script>
+<script type="module" src="Form.js"></script>
+</body>
+</html>

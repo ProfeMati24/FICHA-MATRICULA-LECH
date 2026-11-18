@@ -1,0 +1,34 @@
+Como organizar el proyecto.
+
+
+BASE DE DATOS
+
+BD_CARGABLE/ (una carpeta que guarda datos generales, esta por default en la bd)
+  -establecimientos.json (Se añade a la matricula en alunmo la casilla de su anterior establecimiento)
+  -Condiciones.pdf (Si el archivo no existe solo se avisa, y si existe se muestra en una ventanita)
+
+
+Privado/
+  -alumnos2027.json      (un registro por alumno matriculado en 2027, con su curso)
+  -apoderados2027.json   (los apoderados de ese año)
+
+
+  Archivo/ (los datos de matriculas pasadas se conservan pero son trasladados para no cargar la BD, mejorando la eficiencia.)
+    -alumnos2026.json
+    -apoderados2026.json
+
+Proyecto en si (Archivos de uso general para el funcionamiento de la app)
+
+Documentacion/
+-DocOrganizacion (Organizacion del proyecto)
+-Matricula(1).txt (datos pre eliminares del funcionamiento del sistema)
+-Avances.txt (avances diarios del proyecto.)
+
+
+- Index.html
+- Style.css
+- ScriptAlumnos.js
+- ScriptApoderados.js
+- ScriptDocumentos.js
+- ScriptAdmin.js
+- ScriptBD.js (Administra como los datos entran y se leen, es el script mas importante.)
