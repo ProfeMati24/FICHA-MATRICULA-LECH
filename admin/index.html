@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin · Matrículas</title>
-<!-- Script para aplicar el tema guardado al instante y evitar parpadeos -->
+<link rel="icon" type="image/png" href="../BD_CARGABLE/logo.png">
+<!-- Tema propio del admin (clave distinta a la del formulario) -->
 <script>
   (function(){
     var t = localStorage.getItem("charme-tema");
@@ -14,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -33,11 +34,24 @@
 <!-- DASHBOARD -->
 <div class="admin" id="admin">
   <header class="topbar">
-    <h1><i data-lucide="layout-dashboard"></i> Panel de Administración</h1>
+    <h1>
+      <span class="topbar-logo">
+        <img src="../BD_CARGABLE/logo.png" alt="Logo Liceo Eduardo Charme" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+        <i data-lucide="layout-dashboard" style="display:none;"></i>
+      </span>
+      Panel de Administración
+    </h1>
     <div class="spacer"></div>
-    <div id="estado-conexion" class="estado-conexion"></div>
-    <button class="btn" id="btn-conectar"><i data-lucide="folder-open"></i> Conectar carpeta</button>
     <a class="btn" href="../index.html"><i data-lucide="arrow-left"></i> Formulario</a>
+    <button class="btn" id="btn-visualizar" title="Ver datos por pestañas y páginas tipo libro Excel">
+      <i data-lucide="table-2"></i> Visualizar Tablas
+    </button>
+    <button class="btn" id="btn-gestionar" title="Ver y eliminar años guardados">
+      <i data-lucide="archive"></i> Gestionar años
+    </button>
+    <button class="btn" id="btn-manual" title="Leer el manual de usuario">
+      <i data-lucide="book-open"></i> Manual
+    </button>
     <button class="btn" id="btn-excel" title="Descarga todos los postulantes en un .xlsx">
       <i data-lucide="file-spreadsheet"></i> Excel global
     </button>
@@ -102,15 +116,16 @@
     </div>
     <div class="modal-body" id="m-body"></div>
     <div class="modal-foot">
-      <button class="btn btn-peligro" id="m-eliminar" style="margin-right:auto"><i data-lucide="trash-2"></i> Eliminar</button>
+      <button class="btn btn-peligro" id="m-eliminar"><i data-lucide="trash-2"></i> Eliminar</button>
+      <button class="btn" id="m-editar" style="margin-right:auto"><i data-lucide="pencil"></i> Editar</button>
       <button class="btn" id="m-cerrar-2">Cerrar</button>
       <button class="btn" id="m-pdf"><i data-lucide="file-text"></i> Descargar PDF</button>
-      <button class="btn btn-primario" id="m-guardar"><i data-lucide="save"></i> Guardar cambios</button>
+      <button class="btn btn-primario" id="m-guardar" disabled><i data-lucide="save"></i> Guardar cambios</button>
     </div>
   </div>
 </div>
 
-<!-- Script para la interactividad del botón de tema -->
+<!-- Botón de tema del admin (guarda en charme-tema) -->
 <script>
   (function(){
     var root = document.documentElement;
@@ -133,6 +148,42 @@
     pintarIcono();
   })();
 </script>
-<script type="module" src="admin.js"></script>
+
+<!-- Ventana del visualizador de tablas (iframe) -->
+<div class="visor-bg" id="visor">
+  <div class="visor">
+    <div class="visor-head">
+      <h2><i data-lucide="table-2"></i> Visualizar Tablas</h2>
+      <button class="btn" id="visor-cerrar" title="Cerrar"><i data-lucide="x"></i></button>
+    </div>
+    <iframe id="visor-frame" class="visor-frame" title="Visualizar tablas"></iframe>
+  </div>
+</div>
+
+<!-- Ventana de gestión de años (iframe) -->
+<div class="visor-bg" id="gestor">
+  <div class="visor">
+    <div class="visor-head">
+      <h2><i data-lucide="archive"></i> Gestionar años</h2>
+      <button class="btn" id="gestor-cerrar" title="Cerrar"><i data-lucide="x"></i></button>
+    </div>
+    <iframe id="gestor-frame" class="visor-frame" title="Gestionar años"></iframe>
+  </div>
+</div>
+
+<!-- Ventana del manual de usuario (iframe) -->
+<div class="visor-bg" id="manual">
+  <div class="visor">
+    <div class="visor-head">
+      <h2><i data-lucide="book-open"></i> Manual de usuario</h2>
+      <button class="btn" id="manual-cerrar" title="Cerrar"><i data-lucide="x"></i></button>
+    </div>
+    <iframe id="manual-frame" class="visor-frame" title="Manual de usuario"></iframe>
+  </div>
+</div>
+
+<!-- Scripts clásicos (sin type="module") para doble clic -->
+<script src="../ScriptBD.js"></script>
+<script src="admin.js"></script>
 </body>
 </html>

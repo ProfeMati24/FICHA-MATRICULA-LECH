@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visualizar Tablas · Liceo Eduardo Charme</title>
+<link rel="icon" type="image/png" href="../../BD_CARGABLE/logo.png">
+<script>
+  (function(){
+    var t = localStorage.getItem("charme-tema");
+    if (t) document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="stylesheet" href="../admin.css">
+<style>
+  .topbar .btn-nav-suave {
+    background: var(--bg-surface);
+    color: var(--c-primary-800);
+    border-color: var(--border-strong);
+  }
+  .topbar .btn-nav-suave:hover {
+    background: var(--c-primary-50);
+    color: var(--c-primary-900);
+    border-color: var(--c-primary-600);
+  }
+
+  .hoja-barra {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    background: var(--bg-head);
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .hoja-info h2 {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--c-primary-900);
+  }
+
+  .hoja-info p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .hoja-controles {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .hoja-controles input,
+  .hoja-controles select {
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-md);
+    background: var(--bg-field);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+  }
+
+  /* Selectores con la misma flecha y el mismo espacio que el panel de admin */
+  .hoja-controles select {
+    appearance: none; -webkit-appearance: none;
+    padding-right: 34px; cursor: pointer;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f4fb5' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+    background-repeat: no-repeat; background-position: right 10px center; background-size: 16px;
+  }
+  :root[data-theme="dark"] .hoja-controles select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239cc0f7' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+  }
+
+  .hoja-controles .btn {
+    background: var(--bg-surface);
+    color: var(--c-primary-800);
+    border-color: var(--border-strong);
+  }
+
+  .hoja-controles .btn:hover {
+    background: var(--c-primary-50);
+    color: var(--c-primary-900);
+    border-color: var(--c-primary-600);
+  }
+
+  .tabla-excel th,
+  .tabla-excel td {
+    white-space: nowrap;
+  }
+
+  .doc-si {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--r-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--c-success-50);
+    color: var(--c-success-700);
+    border: 1px solid var(--c-success-500);
+  }
+
+  .doc-no {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--r-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--bg-sunken);
+    color: var(--text-muted);
+    border: 1px solid var(--border-default);
+  }
+
+  .fila-total td {
+    background: var(--c-primary-100) !important;
+    font-weight: 700 !important;
+    color: var(--c-primary-900) !important;
+    border-top: 2px solid var(--c-primary-700);
+  }
+
+  .pie-libro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 18px;
+    background: var(--bg-sunken);
+    border-top: 1px solid var(--border-default);
+  }
+
+  .pestanas-hojas {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .pestana-btn {
+    height: 34px;
+    padding: 0 14px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--border-strong);
+    background: var(--bg-surface);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: background-color .15s, border-color .15s, color .15s;
+  }
+
+  .pestana-btn:hover {
+    background: var(--c-primary-50);
+    border-color: var(--c-primary-600);
+    color: var(--c-primary-900);
+  }
+
+  .pestana-btn.activa {
+    background: var(--c-primary-700);
+    color: #fff;
+    border-color: var(--c-primary-700);
+  }
+
+  :root[data-theme="dark"] .pestana-btn.activa {
+    background: var(--c-gold-500);
+    color: var(--text-on-gold);
+    border-color: var(--c-gold-500);
+  }
+
+  .pestana-count {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 1px 6px;
+    border-radius: var(--r-full);
+    background: rgba(128, 128, 128, 0.16);
+  }
+
+  .paginacion {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .paginacion .btn {
+    height: 32px;
+    padding: 0 10px;
+    background: var(--bg-surface);
+    color: var(--c-primary-800);
+    border-color: var(--border-strong);
+  }
+
+  .paginacion .btn:hover:not(:disabled) {
+    background: var(--c-primary-50);
+    color: var(--c-primary-900);
+    border-color: var(--c-primary-600);
+  }
+
+  .paginacion .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+
+<div class="admin on">
+  <header class="topbar">
+    <h1>
+      <span class="topbar-logo">
+        <img src="../../BD_CARGABLE/logo.png" alt="Logo Liceo Eduardo Charme" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+        <i data-lucide="table-2" style="display:none;"></i>
+      </span>
+      Visualizar Tablas
+    </h1>
+    <div class="spacer"></div>
+    <button class="btn btn-nav-suave" id="btn-refrescar-bd" title="Recargar datos desde GitHub">
+      <i data-lucide="refresh-cw"></i> Actualizar datos
+    </button>
+    <button class="btn" id="btn-tema" title="Cambiar tema claro/oscuro">
+      <i data-lucide="moon"></i>
+    </button>
+  </header>
+
+  <main class="main">
+    <section class="panel">
+      <div class="hoja-barra">
+        <div class="hoja-info">
+          <h2 id="titulo-hoja">Resumen</h2>
+          <p id="subtitulo-hoja">Cargando registros…</p>
+        </div>
+
+        <div class="hoja-controles" id="controles-curso" style="display:none;">
+          <input type="text" id="filtro-texto" placeholder="Buscar en esta hoja…">
+          <select id="filtro-anio"><option value="">Año: Todos</option></select>
+          <select id="filtro-estado"><option value="">Estado: Todos</option></select>
+          <select id="tamano-pagina" title="Filas por página">
+            <option value="15">15 / pág</option>
+            <option value="25" selected>25 / pág</option>
+            <option value="50">50 / pág</option>
+            <option value="999999">Todas</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="tabla-wrap">
+        <table class="tabla-excel" id="tabla-libro">
+          <thead id="thead-libro"></thead>
+          <tbody id="tbody-libro"></tbody>
+        </table>
+      </div>
+
+      <div class="pie-libro">
+        <div class="pestanas-hojas" id="pestanas-hojas"></div>
+        <div class="paginacion" id="paginacion-hoja"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  (function(){
+    var root = document.documentElement;
+    var btn = document.getElementById("btn-tema");
+    if (!btn) return;
+    function estaOscuro(){
+      return root.getAttribute("data-theme") === "dark" ||
+        (!root.getAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    }
+    function pintarIcono(){
+      btn.innerHTML = estaOscuro() ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+      if (window.lucide) lucide.createIcons();
+    }
+    btn.addEventListener("click", function(){
+      var nuevo = estaOscuro() ? "light" : "dark";
+      root.setAttribute("data-theme", nuevo);
+      localStorage.setItem("charme-tema", nuevo);
+      pintarIcono();
+    });
+    pintarIcono();
+  })();
+</script>
+
+<script src="../../ScriptBD.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  const BD = window.BD;
+  const qs = (s, r = document) => r.querySelector(s);
+
+  const estadoVisor = {
+    hoja: "__RESUMEN__",
+    pagina: 1,
+    porPagina: 25,
+    texto: "",
+    anio: "",
+    estado: ""
+  };
+
+  function esc(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function toast(m, t = "info", ms = 4000) {
+    let c = qs("#toast-cont");
+    if (!c) {
+      c = document.createElement("div");
+      c.id = "toast-cont";
+      c.className = "toast-cont";
+      document.body.appendChild(c);
+    }
+    const el = document.createElement("div");
+    el.className = `toast toast-${t}`;
+    el.textContent = m;
+    c.appendChild(el);
+    setTimeout(() => el.remove(), ms);
+  }
+
+  function ordenCurso(nombre) {
+    const t = String(nombre || "").toLowerCase();
+    if (/primero|^1\b|1°|1ro/.test(t)) return 1;
+    if (/segundo|^2\b|2°|2do/.test(t)) return 2;
+    if (/tercero|^3\b|3°|3ro/.test(t)) return 3;
+    if (/cuarto|^4\b|4°|4to/.test(t)) return 4;
+    return 99;
+  }
+
+  function obtenerGruposPorCurso() {
+    const grupos = new Map();
+    for (const p of (BD.postulantes || [])) {
+      const curso = String(p.curso || "Primero Medio").trim() || "Primero Medio";
+      if (!grupos.has(curso)) grupos.set(curso, []);
+      grupos.get(curso).push(p);
+    }
+    const cursos = [...grupos.keys()].sort((a, b) =>
+      (ordenCurso(a) - ordenCurso(b)) || a.localeCompare(b, "es")
+    );
+    return { grupos, cursos };
+  }
+
+  function renderPestanas(cursos, grupos) {
+    const cont = qs("#pestanas-hojas");
+    const totalGlobal = (BD.postulantes || []).length;
+
+    let html = `
+      <button type="button" class="pestana-btn ${estadoVisor.hoja === "__RESUMEN__" ? "activa" : ""}" data-hoja="__RESUMEN__">
+        <i data-lucide="bar-chart-3"></i> Resumen <span class="pestana-count">${totalGlobal}</span>
+      </button>
+    `;
+
+    for (const curso of cursos) {
+      const cant = (grupos.get(curso) || []).length;
+      const activa = estadoVisor.hoja === curso ? "activa" : "";
+      html += `
+        <button type="button" class="pestana-btn ${activa}" data-hoja="${esc(curso)}">
+          ${esc(curso)} <span class="pestana-count">${cant}</span>
+        </button>
+      `;
+    }
+
+    cont.innerHTML = html;
+    cont.querySelectorAll("[data-hoja]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        estadoVisor.hoja = btn.dataset.hoja;
+        estadoVisor.pagina = 1;
+        estadoVisor.texto = "";
+        estadoVisor.anio = "";
+        estadoVisor.estado = "";
+        qs("#filtro-texto").value = "";
+        qs("#filtro-anio").value = "";
+        qs("#filtro-estado").value = "";
+        render();
+      });
+    });
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function renderResumen(cursos, grupos) {
+    qs("#controles-curso").style.display = "none";
+    qs("#titulo-hoja").textContent = "Hoja · Resumen por Curso y Estado";
+    qs("#subtitulo-hoja").textContent =
+      `Total general: ${(BD.postulantes || []).length} postulantes en ${cursos.length} cursos.`;
+
+    qs("#thead-libro").innerHTML = `
+      <tr>
+        <th>Curso</th>
+        <th style="text-align:center;">Total</th>
+        <th style="text-align:center;">Matriculado</th>
+        <th style="text-align:center;">Aceptado</th>
+        <th style="text-align:center;">Recibido</th>
+        <th style="text-align:center;">Postulante</th>
+        <th style="text-align:center;">Rechazado</th>
+      </tr>
+    `;
+
+    if (!cursos.length) {
+      qs("#tbody-libro").innerHTML =
+        `<tr><td colspan="7" class="vacio">No hay registros en la base de datos.</td></tr>`;
+      qs("#paginacion-hoja").innerHTML = "";
+      return;
+    }
+
+    const totales = [0, 0, 0, 0, 0, 0];
+    const filasHtml = cursos.map(curso => {
+      const lista = grupos.get(curso) || [];
+      const cEst = est => lista.filter(p => p.estado === est).length;
+      const vals = [
+        lista.length,
+        cEst("matriculado"),
+        cEst("aceptado"),
+        cEst("recibido"),
+        cEst("postulante"),
+        cEst("rechazado")
+      ];
+      vals.forEach((v, i) => { totales[i] += v; });
+
+      return `
+        <tr>
+          <td><strong>${esc(curso)}</strong></td>
+          <td class="mono" style="text-align:center;"><strong>${vals[0]}</strong></td>
+          <td class="mono" style="text-align:center;">${vals[1]}</td>
+          <td class="mono" style="text-align:center;">${vals[2]}</td>
+          <td class="mono" style="text-align:center;">${vals[3]}</td>
+          <td class="mono" style="text-align:center;">${vals[4]}</td>
+          <td class="mono" style="text-align:center;">${vals[5]}</td>
+        </tr>
+      `;
+    });
+
+    filasHtml.push(`
+      <tr class="fila-total">
+        <td>TOTAL GENERAL</td>
+        <td class="mono" style="text-align:center;">${totales[0]}</td>
+        <td class="mono" style="text-align:center;">${totales[1]}</td>
+        <td class="mono" style="text-align:center;">${totales[2]}</td>
+        <td class="mono" style="text-align:center;">${totales[3]}</td>
+        <td class="mono" style="text-align:center;">${totales[4]}</td>
+        <td class="mono" style="text-align:center;">${totales[5]}</td>
+      </tr>
+    `);
+
+    qs("#tbody-libro").innerHTML = filasHtml.join("");
+    qs("#paginacion-hoja").innerHTML = `<span>Vista consolidada · ${cursos.length} hojas de curso</span>`;
+  }
+
+  function renderHojaCurso(curso, listaBase) {
+    qs("#controles-curso").style.display = "flex";
+    qs("#titulo-hoja").textContent = `Hoja · ${curso}`;
+
+    const aniosSet = new Set();
+    const estadosSet = new Set();
+    for (const p of listaBase) {
+      if (p.anio) aniosSet.add(String(p.anio));
+      if (p.estado) estadosSet.add(String(p.estado));
+    }
+
+    const selAnio = qs("#filtro-anio");
+    const anioPrev = selAnio.value;
+    selAnio.innerHTML = `<option value="">Año: Todos</option>` +
+      [...aniosSet].sort().map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join("");
+    if ([...aniosSet].includes(anioPrev)) selAnio.value = anioPrev;
+
+    const selEst = qs("#filtro-estado");
+    const estPrev = selEst.value;
+    selEst.innerHTML = `<option value="">Estado: Todos</option>` +
+      [...estadosSet].sort().map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join("");
+    if ([...estadosSet].includes(estPrev)) selEst.value = estPrev;
+
+    const filtrados = listaBase.filter(p => {
+      if (estadoVisor.anio && String(p.anio || "") !== estadoVisor.anio) return false;
+      if (estadoVisor.estado && String(p.estado || "") !== estadoVisor.estado) return false;
+      if (estadoVisor.texto) {
+        const blob = JSON.stringify(p).toLowerCase();
+        if (!blob.includes(estadoVisor.texto)) return false;
+      }
+      return true;
+    }).sort((a, b) =>
+      (Number(b.anio) - Number(a.anio)) ||
+      String(a.numeroMatricula || "").localeCompare(String(b.numeroMatricula || ""), "es")
+    );
+
+    const porPag = Math.max(1, Number(estadoVisor.porPagina) || 25);
+    const totalPags = Math.max(1, Math.ceil(filtrados.length / porPag));
+    if (estadoVisor.pagina > totalPags) estadoVisor.pagina = totalPags;
+    if (estadoVisor.pagina < 1) estadoVisor.pagina = 1;
+
+    const inicio = (estadoVisor.pagina - 1) * porPag;
+    const fin = inicio + porPag;
+    const paginaFilas = filtrados.slice(inicio, fin);
+
+    qs("#subtitulo-hoja").textContent =
+      `Mostrando ${filtrados.length ? inicio + 1 : 0}–${Math.min(fin, filtrados.length)} de ${filtrados.length} registros en ${curso}.`;
+
+    qs("#thead-libro").innerHTML = `
+      <tr>
+        <th>N° Matrícula</th>
+        <th>Año</th>
+        <th>Especialidad</th>
+        <th>Estado</th>
+        <th>Apellido Paterno</th>
+        <th>Apellido Materno</th>
+        <th>Nombres</th>
+        <th>RUT</th>
+        <th>F. Nacimiento</th>
+        <th>Vive Con</th>
+        <th>Fono Alumno</th>
+        <th>Domicilio</th>
+        <th>Establecimiento Anterior</th>
+        <th>Apoderado Titular</th>
+        <th>RUT Titular</th>
+        <th>Fono Titular</th>
+        <th>Apoderado Suplente</th>
+        <th>Fono Suplente</th>
+        <th>Nac.</th>
+        <th>Est.</th>
+        <th>Pers.</th>
+        <th>Ficha</th>
+        <th>PIE</th>
+        <th>Registro</th>
+      </tr>
+    `;
+
+    if (!paginaFilas.length) {
+      qs("#tbody-libro").innerHTML =
+        `<tr><td colspan="24" class="vacio">No hay registros que coincidan con el filtro en esta hoja.</td></tr>`;
+    } else {
+      const badgeDoc = ok => ok
+        ? `<span class="doc-si">Sí</span>`
+        : `<span class="doc-no">No</span>`;
+
+      qs("#tbody-libro").innerHTML = paginaFilas.map(p => {
+        const d = p.documentos || {};
+        return `
+          <tr>
+            <td class="mono"><strong>${esc(p.numeroMatricula || "—")}</strong></td>
+            <td class="mono">${esc(p.anio || "—")}</td>
+            <td>${esc(p.alumno?.especialidad || "—")}</td>
+            <td><span class="estado ${esc(p.estado || "")}">${esc(p.estado || "—")}</span></td>
+            <td>${esc(p.alumno?.apellidoPaterno || "—")}</td>
+            <td>${esc(p.alumno?.apellidoMaterno || "—")}</td>
+            <td><strong>${esc(p.alumno?.nombres || "—")}</strong></td>
+            <td class="mono">${esc(p.alumno?.rut || "—")}</td>
+            <td class="mono">${esc(p.alumno?.fechaNacimiento || "—")}</td>
+            <td>${esc(p.alumno?.viveCon || "—")}</td>
+            <td class="mono">${esc(p.alumno?.fono || "—")}</td>
+            <td>${esc(p.alumno?.domicilio || "—")}</td>
+            <td>${esc(p.alumno?.establecimientoAnterior || "—")}</td>
+            <td>${esc(p.apoderadoTitular?.nombre || "—")}</td>
+            <td class="mono">${esc(p.apoderadoTitular?.rut || "—")}</td>
+            <td class="mono">${esc(p.apoderadoTitular?.fono || "—")}</td>
+            <td>${esc(p.apoderadoSuplente?.nombre || "—")}</td>
+            <td class="mono">${esc(p.apoderadoSuplente?.fono || "—")}</td>
+            <td style="text-align:center;">${badgeDoc(!!d.certificadoNacimiento)}</td>
+            <td style="text-align:center;">${badgeDoc(!!d.certificadoEstudio)}</td>
+            <td style="text-align:center;">${badgeDoc(!!d.informePersonalidad)}</td>
+            <td style="text-align:center;">${badgeDoc(!!d.fichaEscolar)}</td>
+            <td style="text-align:center;">${badgeDoc(!!d.carpetaPIE)}</td>
+            <td class="mono">${esc((p.creado || "").slice(0, 10) || "—")}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    const pagEl = qs("#paginacion-hoja");
+    pagEl.innerHTML = `
+      <span>Página <strong class="mono">${estadoVisor.pagina}</strong> de <strong class="mono">${totalPags}</strong></span>
+      <button type="button" class="btn" id="btn-pag-prev" ${estadoVisor.pagina <= 1 ? "disabled" : ""}>
+        <i data-lucide="chevron-left"></i> Anterior
+      </button>
+      <button type="button" class="btn" id="btn-pag-next" ${estadoVisor.pagina >= totalPags ? "disabled" : ""}>
+        Siguiente <i data-lucide="chevron-right"></i>
+      </button>
+    `;
+
+    qs("#btn-pag-prev")?.addEventListener("click", () => {
+      estadoVisor.pagina = Math.max(1, estadoVisor.pagina - 1);
+      render();
+    });
+    qs("#btn-pag-next")?.addEventListener("click", () => {
+      estadoVisor.pagina = Math.min(totalPags, estadoVisor.pagina + 1);
+      render();
+    });
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function render() {
+    const { grupos, cursos } = obtenerGruposPorCurso();
+    if (estadoVisor.hoja !== "__RESUMEN__" && !grupos.has(estadoVisor.hoja)) {
+      estadoVisor.hoja = "__RESUMEN__";
+    }
+    renderPestanas(cursos, grupos);
+
+    if (estadoVisor.hoja === "__RESUMEN__") {
+      renderResumen(cursos, grupos);
+    } else {
+      renderHojaCurso(estadoVisor.hoja, grupos.get(estadoVisor.hoja) || []);
+    }
+  }
+
+  async function cargarDatos() {
+    if (!BD) {
+      qs("#subtitulo-hoja").textContent = "No se encontró ScriptBD.js.";
+      return;
+    }
+    const r = await BD.intentarRestaurar();
+    if (!r.ok) {
+      toast("No se pudo conectar a GitHub: " + (r.error || r.motivo), "error", 6000);
+    }
+    render();
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    qs("#filtro-texto")?.addEventListener("input", e => {
+      estadoVisor.texto = e.target.value.toLowerCase().trim();
+      estadoVisor.pagina = 1;
+      render();
+    });
+    qs("#filtro-anio")?.addEventListener("change", e => {
+      estadoVisor.anio = e.target.value;
+      estadoVisor.pagina = 1;
+      render();
+    });
+    qs("#filtro-estado")?.addEventListener("change", e => {
+      estadoVisor.estado = e.target.value;
+      estadoVisor.pagina = 1;
+      render();
+    });
+    qs("#tamano-pagina")?.addEventListener("change", e => {
+      estadoVisor.porPagina = Number(e.target.value) || 25;
+      estadoVisor.pagina = 1;
+      render();
+    });
+    qs("#btn-refrescar-bd")?.addEventListener("click", async () => {
+      await cargarDatos();
+      toast("Datos actualizados desde la base.", "ok");
+    });
+
+    if (window.lucide) lucide.createIcons();
+    await cargarDatos();
+  });
+})();
+</script>
+</body>
+</html>

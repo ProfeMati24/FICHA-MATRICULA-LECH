@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistente Charme · Matrículas</title>
+<link rel="icon" type="image/png" href="../../BD_CARGABLE/logo.png">
+<script>
+  (function(){
+    var t = localStorage.getItem("charme-tema");
+    if (t) document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="stylesheet" href="../admin.css">
+<style>
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; overflow: hidden; }
+
+  .as-barra {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 18px; background: var(--bg-head); border-bottom: 1px solid var(--border-default);
+  }
+  .as-barra h2 { font-family: var(--font-serif); font-size: 1.15rem; color: var(--c-primary-900); display: flex; align-items: center; gap: 8px; margin: 0; }
+
+  .as-feed { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; background: var(--bg-app); }
+
+  .msg { max-width: min(760px, 100%); padding: 12px 16px; border-radius: var(--r-lg); line-height: 1.55; font-size: 1rem; }
+  .msg-bot { align-self: flex-start; background: var(--bg-surface); border: 1px solid var(--border-default); color: var(--text-main); }
+  .msg-usuario { align-self: flex-end; background: var(--c-primary-700); color: #fff; }
+  .msg p { margin: 0 0 8px; }
+  .msg p:last-child { margin-bottom: 0; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .chip, .acc-btn {
+    min-height: 40px; padding: 0 14px; border-radius: var(--r-md); cursor: pointer;
+    border: 1px solid var(--border-strong); background: var(--bg-field); color: var(--c-primary-800);
+    font: inherit; font-weight: 600; font-size: .95rem; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .chip:hover, .acc-btn:hover { border-color: var(--c-primary-600); background: var(--c-primary-50); }
+  .acc-btn.primario { background: var(--c-primary-700); color: #fff; border-color: var(--c-primary-700); }
+  .acc-btn.primario:hover { background: var(--c-primary-800); }
+  .acc-btn.peligro { color: var(--c-danger-700); }
+
+  .res-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .res-card {
+    text-align: left; width: 100%; padding: 12px 14px; cursor: pointer; font: inherit;
+    border: 1px solid var(--border-default); border-radius: var(--r-md); background: var(--bg-field); color: var(--text-main);
+  }
+  .res-card:hover, .res-card:focus-visible { border-color: var(--c-primary-600); }
+  .res-card strong { display: block; font-size: 1.05rem; }
+  .res-card small { color: var(--text-muted); font-size: .9rem; }
+
+  .fila-filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .fila-filtros select { min-height: 40px; border-radius: var(--r-md); border: 1px solid var(--border-strong); background: var(--bg-field); color: var(--text-main); padding: 0 10px; font: inherit; }
+
+  .ficha-sec { margin-top: 12px; }
+  .ficha-sec h4 { margin: 0 0 6px; font-size: 1rem; color: var(--c-primary-900); }
+  .ficha-sec dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; font-size: .97rem; }
+  .ficha-sec dt { color: var(--text-muted); font-weight: 600; }
+  .ficha-sec dd { margin: 0; }
+  .ficha-sec .docs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .doc-si, .doc-no { padding: 4px 10px; border-radius: var(--r-full); font-size: .88rem; font-weight: 600; }
+  .doc-si { background: var(--c-success-100); color: var(--c-success-700); }
+  .doc-no { background: var(--c-n-100); color: var(--text-muted); }
+
+  .ed-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 8px; }
+  .ed-grid label { font-weight: 700; font-size: .95rem; color: var(--text-label); display: block; margin-bottom: 4px; }
+  .ed-grid input, .ed-grid select {
+    width: 100%; min-height: 44px; padding: 0 12px; font: inherit; font-size: 1rem;
+    border: 2px solid var(--border-strong); border-radius: var(--r-md); background: var(--bg-field); color: var(--text-main);
+  }
+  .ed-grid input:focus-visible, .ed-grid select:focus-visible { outline: 3px solid var(--c-gold-500); outline-offset: 2px; }
+
+  .cambios { margin: 8px 0 0; padding-left: 18px; }
+  .cambios li { margin-bottom: 4px; }
+
+  .as-composer {
+    display: flex; gap: 10px; padding: 12px 18px; background: var(--bg-surface); border-top: 1px solid var(--border-default);
+  }
+  .as-composer input {
+    flex: 1; min-height: 48px; padding: 0 14px; font: inherit; font-size: 1.05rem;
+    border: 2px solid var(--border-strong); border-radius: var(--r-md); background: var(--bg-field); color: var(--text-main);
+  }
+  .as-composer input:focus-visible { outline: 3px solid var(--c-gold-500); outline-offset: 2px; }
+  .as-composer .btn { min-height: 48px; }
+
+  :focus-visible { outline: 3px solid var(--c-gold-500); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="as-barra">
+  <h2><i data-lucide="message-square"></i> Asistente Charme</h2>
+  <button class="btn" id="as-cerrar" title="Cerrar"><i data-lucide="x"></i></button>
+</header>
+
+<main class="as-feed" id="feed" aria-live="polite"></main>
+
+<div class="as-composer">
+  <input type="text" id="entrada" placeholder="Escriba nombre, apellido o RUT del alumno…" autocomplete="off" aria-label="Buscar alumno">
+  <button class="btn btn-primario" id="enviar"><i data-lucide="search"></i> Buscar</button>
+</div>
+
+<script src="../../ScriptBD.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  const feed = document.getElementById("feed");
+  const entrada = document.getElementById("entrada");
+  const ESTADOS = ["postulante", "recibido", "aceptado", "matriculado", "rechazado"];
+  const CURSOS = { 1: "Primero Medio", 2: "Segundo Medio", 3: "Tercero Medio", 4: "Cuarto Medio" };
+  const DOCS = [
+    ["certificadoNacimiento", "a) Certificado de nacimiento"],
+    ["certificadoEstudio", "b) Certificado de estudio"],
+    ["informePersonalidad", "c) Informe de personalidad"],
+    ["fichaEscolar", "d) Ficha escolar"],
+    ["carpetaPIE", "e) Carpeta PIE"]
+  ];
+
+  /* ---------- utilidades ---------- */
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const normal = s => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const nombreCompleto = p => [p.alumno?.apellidoPaterno, p.alumno?.apellidoMaterno, p.alumno?.nombres].filter(Boolean).join(" ") || "Sin nombre";
+  const curso = p => p.curso || CURSOS[Number(p.lobby?.grado)] || "—";
+  const fecha = iso => {
+    if (!iso) return "—";
+    const [a, m, d] = String(iso).slice(0, 10).split("-");
+    return d && m && a ? `${d}/${m}/${a}` : String(iso);
+  };
+  const hoyISO = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+  const soloDigitos = s => String(s ?? "").replace(/\D/g, "");
+  const iconos = () => { if (window.lucide) lucide.createIcons(); };
+  const bajar = () => { feed.scrollTop = feed.scrollHeight; };
+
+  function agregar(html, clase) {
+    const d = document.createElement("div");
+    d.className = "msg " + clase;
+    d.innerHTML = html;
+    feed.appendChild(d);
+    iconos();
+    bajar();
+    return d;
+  }
+  const usuario = txt => agregar(`<p>${esc(txt)}</p>`, "msg-usuario");
+  const bot = html => agregar(html, "msg-bot");
+  const enviarAlPanel = payload => window.parent?.postMessage(payload, "*");
+
+  /* ---------- inicio ---------- */
+  function bienvenida() {
+    bot(`
+      <p><strong>Hola.</strong> Puedo buscar alumnos, mostrar sus fichas, cambiar datos con confirmación y generar comprobantes.</p>
+      <div class="chips">
+        <button class="chip" data-accion="buscar"><i data-lucide="search"></i> Buscar alumno</button>
+        <button class="chip" data-accion="hoy"><i data-lucide="calendar-days"></i> Postulantes de hoy</button>
+        <button class="chip" data-accion="excel"><i data-lucide="file-spreadsheet"></i> Excel global</button>
+      </div>`);
+  }
+
+  async function iniciar() {
+    bot("<p>Cargando datos desde la base…</p>");
+    const r = await BD.intentarRestaurar();
+    if (!r || !r.ok) {
+      bot(`<p>No pude cargar los datos${r?.motivo === "sin-token" ? ": falta configurar el acceso a la base." : ". Revise su conexión y vuelva a intentarlo."}</p>`);
+      return;
+    }
+    bienvenida();
+  }
+
+  /* ---------- búsqueda y resultados ---------- */
+  function listaCompleta() { return BD.postulantes || []; }
+
+  function buscar(texto) {
+    const q = normal(texto);
+    if (!q) { bot("<p>Escriba un nombre, un apellido o un RUT para buscar.</p>"); return; }
+    const lista = listaCompleta().filter(p =>
+      normal(`${nombreCompleto(p)} ${p.alumno?.rut || ""}`).includes(q));
+    mostrarResultados(lista, `«${texto}»`);
+  }
+
+  function mostrarResultados(lista, titulo) {
+    if (!lista.length) {
+      bot(`<p>No encontré alumnos para ${esc(titulo)}. Revise la escritura o busque solo por apellido.</p>`);
+      return;
+    }
+    const anios = [...new Set(lista.map(p => String(p.anio)).filter(Boolean))].sort().reverse();
+    const estados = [...new Set(lista.map(p => p.estado).filter(Boolean))];
+    const bloque = bot(`
+      <p>${lista.length} alumno(s) para ${esc(titulo)}.</p>
+      <div class="fila-filtros">
+        <select data-filtro="anio" aria-label="Filtrar por año">
+          <option value="">Todos los años</option>
+          ${anios.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join("")}
+        </select>
+        <select data-filtro="estado" aria-label="Filtrar por estado">
+          <option value="">Todos los estados</option>
+          ${estados.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join("")}
+        </select>
+      </div>
+      <div class="res-lista"></div>`);
+
+    const pintar = () => {
+      const anio = bloque.querySelector('[data-filtro="anio"]').value;
+      const est = bloque.querySelector('[data-filtro="estado"]').value;
+      const filas = lista.filter(p => (!anio || String(p.anio) === anio) && (!est || p.estado === est));
+      const cont = bloque.querySelector(".res-lista");
+      cont.innerHTML = filas.length
+        ? filas.map(p => `
+            <button class="res-card" data-id="${esc(p.id)}">
+              <strong>${esc(nombreCompleto(p))}</strong>
+              <small>RUT ${esc(p.alumno?.rut || "—")} · Año ${esc(p.anio || "—")} · ${esc(curso(p))} · N° ${esc(p.numeroMatricula || "—")} · Creado ${esc(fecha(p.creado))} · ${esc(p.estado || "—")}</small>
+            </button>`).join("")
+        : "<p>Ningún alumno cumple esos filtros.</p>";
+      bajar();
+    };
+    bloque.querySelectorAll("select").forEach(s => s.addEventListener("change", pintar));
+    pintar();
+  }
+
+  /* ---------- ficha ---------- */
+  function fichaHTML(p) {
+    const docs = p.documentos || {};
+    const t = p.apoderadoTitular || {};
+    const s = p.apoderadoSuplente || {};
+    const a = p.alumno || {};
+    return `
+      <p><strong>${esc(nombreCompleto(p))}</strong> · N° ${esc(p.numeroMatricula || "—")}</p>
+      <div class="ficha-sec"><h4>Matrícula</h4>
+        <dl><dt>Año</dt><dd>${esc(p.anio || "—")}</dd>
+            <dt>Curso</dt><dd>${esc(curso(p))}</dd>
+            <dt>Estado</dt><dd>${esc(p.estado || "—")}</dd>
+            <dt>Creado</dt><dd>${esc(fecha(p.creado))}</dd></dl></div>
+      <div class="ficha-sec"><h4>Alumno</h4>
+        <dl><dt>RUT</dt><dd>${esc(a.rut || "—")}</dd>
+            <dt>Nacimiento</dt><dd>${esc(fecha(a.fechaNacimiento))}</dd>
+            <dt>Fono</dt><dd>${esc(a.fono || "—")}</dd>
+            <dt>Domicilio</dt><dd>${esc(a.domicilio || "—")}</dd>
+            <dt>Establecimiento anterior</dt><dd>${esc(a.establecimientoAnterior || "—")}</dd></dl></div>
+      <div class="ficha-sec"><h4>Apoderado titular</h4>
+        <dl><dt>Nombre</dt><dd>${esc(t.nombre || "—")}</dd>
+            <dt>RUT</dt><dd>${esc(t.rut || "—")}</dd>
+            <dt>Fono</dt><dd>${esc(t.fono || "—")}</dd>
+            <dt>Domicilio</dt><dd>${esc(t.domicilio || "—")}</dd></dl></div>
+      <div class="ficha-sec"><h4>Apoderado suplente</h4>
+        <dl><dt>Nombre</dt><dd>${esc(s.nombre || "—")}</dd>
+            <dt>RUT</dt><dd>${esc(s.rut || "—")}</dd>
+            <dt>Fono</dt><dd>${esc(s.fono || "—")}</dd>
+            <dt>Domicilio</dt><dd>${esc(s.domicilio || "—")}</dd></dl></div>
+      <div class="ficha-sec"><h4>Documentos</h4>
+        <div class="docs">${DOCS.map(([k, txt]) =>
+          `<span class="${docs[k] ? "doc-si" : "doc-no"}">${docs[k] ? "✓" : "✗"} ${esc(txt.slice(3))}</span>`).join("")}
+        </div></div>
+      <div class="chips">
+        <button class="acc-btn" data-accion="pdf" data-id="${esc(p.id)}"><i data-lucide="file-text"></i> Descargar PDF</button>
+        <button class="acc-btn primario" data-accion="cambiar" data-id="${esc(p.id)}"><i data-lucide="pencil"></i> Cambiar datos</button>
+      </div>`;
+  }
+
+  function mostrarFicha(id) {
+    const p = listaCompleta().find(x => x.id === id);
+    if (!p) { bot("<p>No encontré ese alumno. Puede que haya sido eliminado.</p>"); return; }
+    bot(fichaHTML(p));
+  }
+
+  /* ---------- cambiar datos (con confirmación) ---------- */
+  function formularioCambio(bloque, p) {
+    const a = p.alumno || {}, t = p.apoderadoTitular || {}, s = p.apoderadoSuplente || {};
+    bloque.innerHTML = `
+      <p><strong>${esc(nombreCompleto(p))}</strong>. Modifique solo lo que corresponda.</p>
+      <div class="ed-grid">
+        <div><label for="e-estado">Estado</label>
+          <select id="e-estado">${ESTADOS.map(e => `<option ${e === p.estado ? "selected" : ""}>${e}</option>`).join("")}</select></div>
+        <div><label for="e-alu-fono">Fono del alumno (mínimo 8 dígitos)</label>
+          <input id="e-alu-fono" value="${esc(a.fono || "")}"></div>
+        <div><label for="e-alu-dom">Domicilio del alumno</label>
+          <input id="e-alu-dom" value="${esc(a.domicilio || "")}"></div>
+        <div><label for="e-tit-fono">Fono del apoderado titular (mínimo 8 dígitos)</label>
+          <input id="e-tit-fono" value="${esc(t.fono || "")}"></div>
+        <div><label for="e-tit-dom">Domicilio del apoderado titular</label>
+          <input id="e-tit-dom" value="${esc(t.domicilio || "")}"></div>
+        <div><label for="e-sup-fono">Fono del apoderado suplente (mínimo 8 dígitos)</label>
+          <input id="e-sup-fono" value="${esc(s.fono || "")}"></div>
+        <div><label for="e-sup-dom">Domicilio del apoderado suplente</label>
+          <input id="e-sup-dom" value="${esc(s.domicilio || "")}"></div>
+      </div>
+      <div class="chips">
+        <button class="acc-btn primario" data-accion="revisar" data-id="${esc(p.id)}"><i data-lucide="check"></i> Revisar cambios</button>
+        <button class="acc-btn" data-accion="ficha" data-id="${esc(p.id)}"><i data-lucide="arrow-left"></i> Volver a la ficha</button>
+      </div>`;
+    iconos();
+    bajar();
+  }
+
+  const CAMPOS = [
+    ["e-estado", "Estado", p => p.estado || ""],
+    ["e-alu-fono", "Fono del alumno", p => p.alumno?.fono || ""],
+    ["e-alu-dom", "Domicilio del alumno", p => p.alumno?.domicilio || ""],
+    ["e-tit-fono", "Fono del apoderado titular", p => p.apoderadoTitular?.fono || ""],
+    ["e-tit-dom", "Domicilio del apoderado titular", p => p.apoderadoTitular?.domicilio || ""],
+    ["e-sup-fono", "Fono del apoderado suplente", p => p.apoderadoSuplente?.fono || ""],
+    ["e-sup-dom", "Domicilio del apoderado suplente", p => p.apoderadoSuplente?.domicilio || ""]
+  ];
+
+  function revisarCambios(bloque, p) {
+    const cambios = [];
+    for (const [id, nombre, antes] of CAMPOS) {
+      const despues = bloque.querySelector("#" + id).value.trim();
+      if (despues !== String(antes(p)).trim()) cambios.push({ id, nombre, antes: antes(p), despues });
+    }
+    const errores = [];
+    for (const c of cambios) {
+      if (c.id.endsWith("fono") && soloDigitos(c.despues).length < 8)
+        errores.push(`${c.nombre}: debe tener al menos 8 dígitos.`);
+    }
+    if (errores.length) {
+      bot(`<p>No puedo guardar todavía:</p><ul class="cambios">${errores.map(e => `<li>${esc(e)}</li>`).join("")}</ul>`);
+      return;
+    }
+    if (!cambios.length) {
+      bot("<p>No hay cambios para guardar.</p>");
+      return;
+    }
+    const estadoNuevo = bloque.querySelector("#e-estado").value;
+    const valores = Object.fromEntries(cambios.map(c => [c.id, c.despues]));
+    bot(`
+      <p>Se cambiarán estos datos de <strong>${esc(nombreCompleto(p))}</strong>:</p>
+      <ul class="cambios">${cambios.map(c => `<li>${esc(c.nombre)}: <em>${esc(c.antes || "—")}</em> → <strong>${esc(c.despues || "—")}</strong></li>`).join("")}</ul>
+      <div class="chips">
+        <button class="acc-btn primario" data-accion="confirmar" data-id="${esc(p.id)}"
+                data-payload="${esc(JSON.stringify({ estado: estadoNuevo, valores }))}">
+          <i data-lucide="save"></i> Confirmar y guardar</button>
+        <button class="acc-btn" data-accion="ficha" data-id="${esc(p.id)}"><i data-lucide="arrow-left"></i> Volver a la ficha</button>
+      </div>`);
+  }
+
+  async function confirmarCambios(id, dataPayload) {
+    const p = listaCompleta().find(x => x.id === id);
+    if (!p) { bot("<p>No encontré ese alumno.</p>"); return; }
+    const { estado, valores } = JSON.parse(dataPayload);
+    const alumno = { ...(p.alumno || {}), fono: valores["e-alu-fono"] ?? p.alumno?.fono, domicilio: valores["e-alu-dom"] ?? p.alumno?.domicilio };
+    const titular = { ...(p.apoderadoTitular || {}), fono: valores["e-tit-fono"] ?? p.apoderadoTitular?.fono, domicilio: valores["e-tit-dom"] ?? p.apoderadoTitular?.domicilio };
+    const suplente = { ...(p.apoderadoSuplente || {}), fono: valores["e-sup-fono"] ?? p.apoderadoSuplente?.fono, domicilio: valores["e-sup-dom"] ?? p.apoderadoSuplente?.domicilio };
+    try {
+      await BD.actualizarPostulante(id, {
+        estado,
+        alumno,
+        apoderadoTitular: titular,
+        apoderadoSuplente: suplente,
+        documentos: { ...(p.documentos || {}) }
+      });
+      enviarAlPanel({ tipo: "datos-cambiados" });
+      bot("<p>Cambios guardados.</p>");
+      mostrarFicha(id);
+    } catch (e) {
+      bot(`<p>No se pudo guardar: ${esc(e.message || "error de conexión")}. Revise la conexión y vuelva a intentarlo. Los datos no se modificaron.</p>`);
+    }
+  }
+
+  /* ---------- acciones ---------- */
+  function ejecutar(accion, el) {
+    const id = el?.dataset.id;
+    switch (accion) {
+      case "buscar":
+        usuario("Buscar alumno");
+        bot("<p>Escriba el nombre, el apellido o el RUT del alumno.</p>");
+        entrada.focus();
+        break;
+      case "hoy": {
+        usuario("Postulantes de hoy");
+        const hoy = hoyISO();
+        mostrarResultados(listaCompleta().filter(p => String(p.creado || "").slice(0, 10) === hoy), "los creados hoy");
+        break;
+      }
+      case "excel":
+        usuario("Excel global");
+        enviarAlPanel({ tipo: "excel-global" });
+        bot("<p>Se está generando el Excel global. Si no aparece la descarga, revise la conexión.</p>");
+        break;
+      case "ficha":
+        mostrarFicha(id);
+        break;
+      case "pdf": {
+        usuario("Descargar PDF");
+        enviarAlPanel({ tipo: "ficha-pdf", id });
+        bot("<p>Se abrirá la ventana de impresión con el comprobante. Elija «Guardar como PDF».</p>");
+        break;
+      }
+      case "cambiar": {
+        usuario("Cambiar datos");
+        const p = listaCompleta().find(x => x.id === id);
+        if (!p) { bot("<p>No encontré ese alumno.</p>"); break; }
+        const bloque = bot("");
+        formularioCambio(bloque, p);
+        break;
+      }
+      case "revisar": {
+        const p = listaCompleta().find(x => x.id === id);
+        if (!p) { bot("<p>No encontré ese alumno.</p>"); break; }
+        const formBloque = el.closest(".msg");
+        revisarCambios(formBloque, p);
+        break;
+      }
+      case "confirmar":
+        usuario("Confirmar y guardar");
+        confirmarCambios(id, el.dataset.payload);
+        break;
+    }
+  }
+
+  /* ---------- eventos ---------- */
+  document.getElementById("enviar").addEventListener("click", () => {
+    const t = entrada.value;
+    entrada.value = "";
+    usuario(t);
+    buscar(t);
+  });
+  entrada.addEventListener("keydown", e => {
+    if (e.key === "Enter") document.getElementById("enviar").click();
+  });
+
+  feed.addEventListener("click", e => {
+    const res = e.target.closest(".res-card");
+    if (res) { usuario(res.querySelector("strong").textContent); mostrarFicha(res.dataset.id); return; }
+    const btn = e.target.closest("[data-accion]");
+    if (btn) ejecutar(btn.dataset.accion, btn);
+  });
+
+  document.getElementById("as-cerrar").addEventListener("click", () => enviarAlPanel({ tipo: "cerrar-visor" }));
+
+  iconos();
+  iniciar();
+})();
+</script>
+</body>
+</html>

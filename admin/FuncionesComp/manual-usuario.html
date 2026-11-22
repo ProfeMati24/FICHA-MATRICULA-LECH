@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Usuario · Matrículas</title>
+<link rel="icon" type="image/png" href="../../BD_CARGABLE/logo.png">
+<style>
+  html, body { height: 100%; margin: 0; background: #525659; }
+  iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .aviso {
+    display: none; height: 100%; align-items: center; justify-content: center; padding: 24px;
+    text-align: center; color: #fff; font-family: Arial, sans-serif; font-size: 15px; box-sizing: border-box;
+  }
+  .aviso.visible { display: flex; }
+</style>
+</head>
+<body>
+
+<iframe id="visor" title="Manual de Usuario"></iframe>
+<div class="aviso" id="aviso">
+  No se encontró el manual en BD_CARGABLE.<br>
+  Revise que el archivo se llame <strong id="nombre-archivo"></strong>.
+</div>
+
+<script>
+  // Cambie este nombre si el archivo del manual se llama distinto.
+  var ARCHIVO_MANUAL = "Manual_Usuario_Sistema_Matriculas_v0.3.pdf";
+  var RUTA = "../../BD_CARGABLE/" + ARCHIVO_MANUAL;
+
+  document.getElementById("nombre-archivo").textContent = ARCHIVO_MANUAL;
+
+  // Se muestra con el visor del navegador, con zoom 80 %
+  function mostrar() {
+    document.getElementById("visor").src = RUTA + "#zoom=80";
+  }
+
+  function sinManual() {
+    document.getElementById("visor").style.display = "none";
+    document.getElementById("aviso").classList.add("visible");
+  }
+
+  // Si el panel se abre como archivo local (file://), no se puede comprobar: se intenta mostrar igual
+  if (location.protocol === "file:") {
+    mostrar();
+  } else {
+    fetch(RUTA, { method: "HEAD", cache: "no-store" })
+      .then(function (r) { if (r.ok) mostrar(); else sinManual(); })
+      .catch(sinManual);
+  }
+</script>
+</body>
+</html>

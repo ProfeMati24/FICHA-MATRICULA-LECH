@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestionar años · Matrículas</title>
+<link rel="icon" type="image/png" href="../../BD_CARGABLE/logo.png">
+<script>
+  (function(){
+    var t = localStorage.getItem("charme-tema");
+    if (t) document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="stylesheet" href="../admin.css">
+<style>
+  .leyenda { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+  .ley { border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; border: 1px solid; }
+  .ley strong { font-size: .95rem; }
+  .ley span { font-size: .85rem; }
+  .ley-verde { background: #e3f6ea; border-color: #7fc99b; color: #14532d; }
+  .ley-amarillo { background: #fff6d6; border-color: #e8c24a; color: #6b4e00; }
+  .ley-rojo { background: #fde4e4; border-color: #e88a8a; color: #7f1d1d; }
+  :root[data-theme="dark"] .ley-verde { background: rgba(79,194,125,.14); color: #b4f0cd; border-color: rgba(79,194,125,.5); }
+  :root[data-theme="dark"] .ley-amarillo { background: rgba(255,194,14,.14); color: #ffe08a; border-color: rgba(255,194,14,.5); }
+  :root[data-theme="dark"] .ley-rojo { background: rgba(229,57,53,.16); color: #ffc4c4; border-color: rgba(229,57,53,.5); }
+
+  .pri { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+  .pri-verde { background: #d1f0dc; color: #14532d; }
+  .pri-amarillo { background: #fff0b3; color: #6b4e00; }
+  .pri-rojo { background: #fcd3d3; color: #7f1d1d; }
+  :root[data-theme="dark"] .pri-verde { background: rgba(79,194,125,.2); color: #b4f0cd; }
+  :root[data-theme="dark"] .pri-amarillo { background: rgba(255,194,14,.2); color: #ffe08a; }
+  :root[data-theme="dark"] .pri-rojo { background: rgba(229,57,53,.22); color: #ffc4c4; }
+
+  .nota { font-size: .85rem; color: var(--text-muted, #66738f); margin: 4px 0 0; }
+  .mini { font-size: .72rem; color: var(--text-muted, #66738f); font-weight: 600; margin-left: 4px; }
+  .acc { white-space: nowrap; }
+  .acc .btn { margin-left: 4px; }
+  .estado-linea { padding: 10px 16px; font-size: .9rem; color: var(--text-muted, #66738f); }
+  .aviso-solo-lectura { padding: 10px 16px; font-size: .9rem; background: #fff6d6; color: #6b4e00; }
+  :root[data-theme="dark"] .aviso-solo-lectura { background: rgba(255,194,14,.14); color: #ffe08a; }
+  .md-input { width: 120px; height: 36px; padding: 0 10px; font: inherit; font-size: 1rem;
+    border: 1px solid var(--border-strong, #c6d6f2); border-radius: 8px;
+    background: var(--bg-field, #fff); color: var(--text-main, #0e1a33); }
+  @media (max-width: 700px) { .leyenda { grid-template-columns: 1fr; } }
+  .btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="admin on">
+  <header class="topbar">
+    <h1>
+      <span class="topbar-logo">
+        <img src="../../BD_CARGABLE/logo.png" alt="Logo" onerror="this.style.display='none'">
+      </span>
+      Gestionar años
+    </h1>
+    <div class="spacer"></div>
+    <button class="btn" id="btn-recargar" title="Volver a leer datos desde GitHub"><i data-lucide="refresh-cw"></i> Actualizar</button>
+  </header>
+
+  <main class="main">
+    <section class="panel">
+      <div class="panel-head"><i data-lucide="info"></i> Prioridad de eliminación según antigüedad</div>
+      <div class="panel-body">
+        <div class="leyenda">
+          <div class="ley ley-verde"><strong>1 a 4 años</strong><span>Estos NO los elimines</span></div>
+          <div class="ley ley-amarillo"><strong>5 a 6 años</strong><span>Deberías considerar eliminarlos</span></div>
+          <div class="ley ley-rojo"><strong>7 años o más</strong><span>No lo usas y ralentiza la app</span></div>
+        </div>
+        <p class="nota">
+          Antigüedad = año actual − año de la matrícula + 1. El año activo de matrículas nunca se puede eliminar.
+          Antes de eliminar un año, descarga su Excel. Los archivos del Excel y del informe contienen datos personales: guárdalos en un lugar seguro.
+        </p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><i data-lucide="database"></i> Años guardados</div>
+      <div class="estado-linea" id="estado">Cargando…</div>
+      <div class="tabla-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Año</th><th>Antigüedad</th><th>Postulantes</th><th>Prioridad</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Confirmación de eliminación -->
+<div class="modal-bg" id="m-del">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-head">
+      <h2 id="md-titulo">Eliminar año</h2>
+      <button class="btn" id="md-x" title="Cerrar"><i data-lucide="x"></i></button>
+    </div>
+    <div class="modal-body" style="display:block">
+      <p id="md-texto"></p>
+      <p id="md-aviso-excel" style="display:none;margin-top:12px;padding:10px 12px;border-radius:8px;background:#fff6d6;color:#6b4e00;">
+        <strong>Antes de eliminar, descarga el Excel de este año</strong> con el botón
+        <i data-lucide="file-spreadsheet"></i> de su fila. Así tendrás una copia de los datos.
+      </p>
+      <p style="margin-top:12px">
+        Para confirmar, escribe el año:
+        <input type="text" id="md-input" class="md-input" inputmode="numeric" maxlength="4" autocomplete="off">
+      </p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="md-cancelar">Cancelar</button>
+      <button class="btn btn-peligro" id="md-confirmar" disabled><i data-lucide="trash-2"></i> Eliminar año</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="../../ScriptBD.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  const BD = window.BD;
+  const enVentana = window.self !== window.top;
+  const qs = s => document.querySelector(s);
+  const tbody = qs("#tbody");
+  let aEliminar = null;
+  const excelDescargado = new Set();   // años cuyo Excel se descargó en esta sesión
+  let ocupado = false;
+
+  const ESTADOS = ["postulante", "recibido", "aceptado", "matriculado", "rechazado"];
+  const MESES_CORTOS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const DOCS = [
+    { k: "certificadoNacimiento", t: "Certificado de nacimiento" },
+    { k: "certificadoEstudio", t: "Certificado de estudio" },
+    { k: "informePersonalidad", t: "Informe de personalidad" },
+    { k: "fichaEscolar", t: "Ficha escolar" },
+    { k: "carpetaPIE", t: "Carpeta PIE" }
+  ];
+
+  const antiguedad = a => new Date().getFullYear() - a + 1;
+
+  function prioridad(a) {
+    const n = antiguedad(a);
+    if (n <= 4) return { clase: "verde", txt: "Estos NO los elimines" };
+    if (n <= 6) return { clase: "amarillo", txt: "Deberías considerar eliminarlos" };
+    return { clase: "rojo", txt: "No lo usas y ralentiza la app" };
+  }
+
+  function esc(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function setEstado(txt) { qs("#estado").textContent = txt; }
+  function iconos() { if (window.lucide) lucide.createIcons(); }
+
+  const datosDeAnio = a => BD.postulantes.filter(p => Number(p.anio) === a);
+
+  // Años con postulantes, agrupados desde los datos cargados
+  function resumenPorAnio() {
+    const mapa = new Map();
+    for (const p of BD.postulantes) {
+      const a = Number(p.anio);
+      if (!a) continue;
+      if (!mapa.has(a)) mapa.set(a, []);
+      mapa.get(a).push(p.id);
+    }
+    return [...mapa.entries()]
+      .map(([anio, ids]) => ({ anio, ids }))
+      .sort((x, y) => y.anio - x.anio);
+  }
+
+  function render() {
+    const lista = resumenPorAnio();
+    if (!lista.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="vacio">No hay años con postulantes.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lista.map(f => {
+      const pr = prioridad(f.anio);
+      const activo = f.anio === Number(BD.config.anioActual);
+      const bloqueado = activo || !enVentana || ocupado;
+      const motivo = activo ? "No se puede eliminar el año activo"
+        : (!enVentana ? "Abre esta herramienta desde el Panel Admin" : "Eliminar año");
+      return `<tr>
+        <td class="mono"><strong>${f.anio}</strong>${activo ? '<span class="mini">(activo)</span>' : ""}</td>
+        <td>${antiguedad(f.anio)}</td>
+        <td>${f.ids.length}</td>
+        <td><span class="pri pri-${pr.clase}">${pr.txt}</span></td>
+        <td class="acc">
+          <button class="btn" data-excel="${f.anio}" title="Excel con todos los postulantes del año"><i data-lucide="file-spreadsheet"></i></button>
+          <button class="btn" data-informe="${f.anio}" title="Informe en PDF con estadísticas"><i data-lucide="bar-chart-3"></i></button>
+          <button class="btn btn-peligro" data-eliminar="${f.anio}" aria-disabled="${bloqueado}" title="${motivo}"><i data-lucide="trash-2"></i></button>
+        </td>
+      </tr>`;
+    }).join("");
+    iconos();
+  }
+
+  async function cargar() {
+    if (ocupado) return;
+    setEstado("Cargando datos desde GitHub…");
+    const r = await BD.intentarRestaurar();
+    if (!r.ok) {
+      tbody.innerHTML = "";
+      setEstado(r.motivo === "sin-token"
+        ? "Falta configurar el acceso a la base de datos."
+        : "No se pudo cargar: " + (r.error || "revisa tu conexión a internet."));
+      return;
+    }
+    render();
+    const n = resumenPorAnio().length;
+    setEstado(`${n} año(s) con postulantes.` +
+      (enVentana ? "" : " Solo lectura: abre esta herramienta desde el Panel Admin."));
+  }
+
+  /* ---------- Utilidades ---------- */
+  const LICEO = "Liceo Eduardo Charme";
+
+  function fechaDMA(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : "—";
+  }
+  function docsTexto(p) {
+    const lista = DOCS.filter(d => p.documentos?.[d.k]).map(d => d.t);
+    return lista.length ? lista.join("; ") : "Ninguno";
+  }
+  function normalizar(s) {
+    return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  }
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+
+  // Edad cumplida al 31 de marzo del año de matrícula (criterio escolar en Chile)
+  function edadAl31Marzo(fechaNac, anio) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(fechaNac || ""));
+    if (!m) return null;
+    let edad = Number(anio) - Number(m[1]);
+    if (Number(m[2]) > 3) edad -= 1;   // cumple años después del 31 de marzo
+    return edad >= 0 && edad < 80 ? edad : null;
+  }
+
+  // Lista de establecimientos (comuna y tipo de procedencia).
+  // 1) JSON por red (con servidor)  2) respaldo .js (abriendo el archivo desde el disco)
+  let mapaEst = null;
+  function cargarScript(src) {
+    return new Promise((res, rej) => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.onload = () => { s.remove(); res(); };
+      s.onerror = () => { s.remove(); rej(new Error("No existe " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  async function cargarEstablecimientos() {
+    if (mapaEst && mapaEst.size) return mapaEst;
+    let lista = null;
+    try {
+      const res = await fetch("../../BD_CARGABLE/establecimientos.json", { cache: "no-store" });
+      if (res.ok) {
+        const j = await res.json();
+        if (Array.isArray(j)) lista = j;
+      }
+    } catch (_) { /* sin servidor: se usa el respaldo */ }
+    if (!lista) {
+      try {
+        window.ESTABLECIMIENTOS = undefined;
+        await cargarScript("../../BD_CARGABLE/establecimientos.js");
+        if (Array.isArray(window.ESTABLECIMIENTOS)) lista = window.ESTABLECIMIENTOS;
+      } catch (_) { /* no existe: quedan "Sin dato" */ }
+    }
+    const m = new Map();
+    for (const e of lista || []) m.set(normalizar(e.nombre), e);
+    mapaEst = m;
+    return mapaEst;
+  }
+
+  // Datos derivados de cada postulante (para Excel e informe)
+  function extras(p, mapa, anio) {
+    const est = mapa.get(normalizar(p.alumno?.establecimientoAnterior)) || {};
+    return {
+      edad: edadAl31Marzo(p.alumno?.fechaNacimiento, anio),
+      liceo: normalizar(p.alumno?.establecimientoAnterior) === normalizar(LICEO) ? "Sí" : "No",
+      comuna: est.ciudad || "Sin dato",
+      tipo: est.categoria || "Sin dato"
+    };
+  }
+
+  /* ---------- EXCEL DEL AÑO ---------- */
+  const COLS = [
+    { h: "N° matrícula", w: 14, f: p => p.numeroMatricula },
+    { h: "Curso", w: 18, f: p => p.curso },
+    { h: "Especialidad", w: 18, f: p => p.alumno?.especialidad || "" },
+    { h: "Estado", w: 14, f: p => p.estado },
+    { h: "Apellido paterno", w: 18, f: p => p.alumno?.apellidoPaterno },
+    { h: "Apellido materno", w: 18, f: p => p.alumno?.apellidoMaterno },
+    { h: "Nombres", w: 22, f: p => p.alumno?.nombres },
+    { h: "RUT", w: 14, f: p => p.alumno?.rut },
+    { h: "Fecha de nacimiento", w: 16, f: p => fechaDMA(p.alumno?.fechaNacimiento) },
+    { h: "Edad al 31 de marzo", w: 12, f: (p, x) => x.edad ?? "" },
+    { h: "Establecimiento anterior", w: 36, f: p => p.alumno?.establecimientoAnterior },
+    { h: "Comuna de procedencia", w: 20, f: (p, x) => x.comuna },
+    { h: "Tipo de establecimiento", w: 20, f: (p, x) => x.tipo },
+    { h: "Ya estudiaba en el liceo", w: 14, f: (p, x) => x.liceo },
+    { h: "Vive con", w: 18, f: p => p.alumno?.viveCon },
+    { h: "Fono alumno", w: 14, f: p => p.alumno?.fono },
+    { h: "Domicilio", w: 36, f: p => p.alumno?.domicilio },
+    { h: "Apoderado titular", w: 24, f: p => p.apoderadoTitular?.nombre },
+    { h: "RUT titular", w: 14, f: p => p.apoderadoTitular?.rut },
+    { h: "Fono titular", w: 14, f: p => p.apoderadoTitular?.fono },
+    { h: "Apoderado suplente", w: 24, f: p => p.apoderadoSuplente?.nombre },
+    { h: "Fecha de ingreso", w: 14, f: p => fechaDMA(p.creado) },
+    { h: "Documentos recibidos", w: 40, f: p => docsTexto(p) }
+  ];
+
+  function estiloCabecera(cell) {
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" }, name: "Calibri", size: 11 };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0D2766" } };
+    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    cell.border = { bottom: { style: "medium", color: { argb: "FFFFC20E" } } };
+  }
+
+  function colLetra(n) {
+    let s = "";
+    while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); }
+    return s;
+  }
+
+  async function descargarExcel(a) {
+    if (typeof ExcelJS === "undefined") {
+      setEstado("No se cargó la librería de Excel. Revisa tu conexión a internet.");
+      return;
+    }
+    const datos = datosDeAnio(a);
+    if (!datos.length) return;
+    setEstado(`Generando Excel del año ${a}…`);
+    const mapa = await cargarEstablecimientos();
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Liceo Eduardo Charme";
+    wb.created = new Date();
+
+    /* Hoja 1: resumen por curso y estado */
+    const cursos = [...new Set(datos.map(p => p.curso || "Sin curso"))].sort((x, y) => x.localeCompare(y, "es"));
+    const ws1 = wb.addWorksheet("Resumen", { views: [{ state: "frozen", ySplit: 3 }] });
+    ws1.mergeCells("A1:H1");
+    ws1.getCell("A1").value = `LICEO EDUARDO CHARME · MATRÍCULAS ${a}`;
+    ws1.getCell("A1").font = { bold: true, size: 13, color: { argb: "FF0D2766" } };
+    ws1.getRow(1).height = 26;
+
+    const cab1 = ["Curso", "Total", ...ESTADOS.map(e => e.charAt(0).toUpperCase() + e.slice(1))];
+    ws1.getRow(3).values = cab1;
+    ws1.getRow(3).eachCell(estiloCabecera);
+    ws1.columns = [{ width: 26 }, { width: 10 }, ...ESTADOS.map(() => ({ width: 14 }))];
+
+    let fila = 4;
+    const totales = new Array(cab1.length - 1).fill(0);
+    for (const c of cursos) {
+      const lista = datos.filter(p => (p.curso || "Sin curso") === c);
+      const vals = [c, lista.length, ...ESTADOS.map(e => lista.filter(p => p.estado === e).length)];
+      vals.slice(1).forEach((v, i) => { totales[i] += v; });
+      ws1.getRow(fila).values = vals;
+      ws1.getRow(fila).eachCell((cell, col) => {
+        cell.alignment = { horizontal: col === 1 ? "left" : "center" };
+        if (fila % 2 === 0) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF2F6FE" } };
+      });
+      fila++;
+    }
+    ws1.getRow(fila).values = ["TOTAL", ...totales];
+    ws1.getRow(fila).font = { bold: true };
+    ws1.getRow(fila).eachCell(cell => {
+      cell.border = { top: { style: "thin", color: { argb: "FF0D2766" } } };
+      cell.alignment = { horizontal: cell.col === 1 ? "left" : "center" };
+    });
+
+    /* Hoja 2: todos los postulantes */
+    const ws2 = wb.addWorksheet("Postulantes", { views: [{ state: "frozen", ySplit: 1 }] });
+    ws2.columns = COLS.map(c => ({ header: c.h, width: c.w }));
+    ws2.getRow(1).height = 30;
+    ws2.getRow(1).eachCell(estiloCabecera);
+    const ordenados = [...datos].sort((x, y) =>
+      String(x.curso || "").localeCompare(String(y.curso || ""), "es") ||
+      String(x.alumno?.apellidoPaterno || "").localeCompare(String(y.alumno?.apellidoPaterno || ""), "es"));
+    ordenados.forEach((p, i) => {
+      const x = extras(p, mapa, a);
+      const r = ws2.addRow(COLS.map(c => c.f(p, x) ?? ""));
+      r.eachCell(cell => {
+        cell.alignment = { vertical: "middle", wrapText: true };
+        if (i % 2 === 1) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF2F6FE" } };
+      });
+    });
+    ws2.autoFilter = { from: "A1", to: `${colLetra(COLS.length)}1` };
+
+    const buf = await wb.xlsx.writeBuffer();
+    const url = URL.createObjectURL(new Blob([buf], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `matriculas-${a}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    excelDescargado.add(a);
+    setEstado(`Excel del año ${a} descargado (${datos.length} postulantes).`);
+  }
+
+  /* ---------- INFORME EN PDF (con barras y estadísticas) ---------- */
+  function estadisticas(datos, mapa, anio) {
+    const cuenta = fn => {
+      const m = new Map();
+      for (const p of datos) { const k = fn(p) || "Sin dato"; m.set(k, (m.get(k) || 0) + 1); }
+      return [...m.entries()].map(([label, value]) => ({ label, value })).sort((x, y) => y.value - x.value);
+    };
+    const n = e => datos.filter(p => p.estado === e).length;
+    const recibidos = datos.filter(p => ["recibido", "aceptado", "matriculado"].includes(p.estado)).length;
+    const aceptados = datos.filter(p => ["aceptado", "matriculado"].includes(p.estado)).length;
+    const matriculados = n("matriculado");
+
+    const meses = MESES_CORTOS.map(label => ({ label, value: 0 }));
+    const fechas = [];
+    for (const p of datos) {
+      const m = /^\d{4}-(\d{2})/.exec(p.creado || "");
+      if (m) { meses[Number(m[1]) - 1].value++; fechas.push(p.creado.slice(0, 10)); }
+    }
+    fechas.sort();
+
+    const mapaEd = new Map();
+    for (const p of datos) {
+      const e = edadAl31Marzo(p.alumno?.fechaNacimiento, anio);
+      if (e !== null) mapaEd.set(e, (mapaEd.get(e) || 0) + 1);
+    }
+    const edades = [...mapaEd.entries()].sort((x, y) => x[0] - y[0]).map(([e, v]) => ({ label: `${e} años`, value: v }));
+
+    const docs = DOCS.map(d => {
+      const k = datos.filter(p => p.documentos?.[d.k]).length;
+      return { label: d.t, value: k, pct: pct(k, datos.length) };
+    });
+
+    return {
+      total: datos.length,
+      matriculados,
+      aceptados: n("aceptado"),
+      rechazados: n("rechazado"),
+      embudo: [
+        { label: "Postulantes", value: datos.length },
+        { label: "Recibidos", value: recibidos },
+        { label: "Aceptados", value: aceptados },
+        { label: "Matriculados", value: matriculados }
+      ],
+      tasaMatricula: pct(matriculados, datos.length),
+      tasaAceptadosMatriculados: pct(matriculados, aceptados),
+      yaEstudiaban: datos.filter(p => normalizar(p.alumno?.establecimientoAnterior) === normalizar(LICEO)).length,
+      conPIE: datos.filter(p => p.documentos?.carpetaPIE).length,
+      meses,
+      edades,
+      porCurso: cuenta(p => p.curso),
+      porEspecialidad: cuenta(p => p.alumno?.especialidad || "Sin especialidad"),
+      porEstablecimiento: cuenta(p => p.alumno?.establecimientoAnterior).slice(0, 12),
+      porComuna: cuenta(p => (mapa.get(normalizar(p.alumno?.establecimientoAnterior)) || {}).ciudad).slice(0, 10),
+      porTipo: cuenta(p => (mapa.get(normalizar(p.alumno?.establecimientoAnterior)) || {}).categoria),
+      viveCon: cuenta(p => p.alumno?.viveCon).slice(0, 8),
+      docs,
+      primera: fechas.length ? fechaDMA(fechas[0]) : "—",
+      ultima: fechas.length ? fechaDMA(fechas[fechas.length - 1]) : "—"
+    };
+  }
+
+  function barrasH(items) {
+    const max = Math.max(1, ...items.map(i => i.value));
+    return items.map(it => `
+      <div class="fila">
+        <span class="etq">${esc(it.label)}</span>
+        <div class="pista"><div class="barra" style="width:${it.value / max * 100}%"></div></div>
+        <span class="val">${it.value}</span>
+      </div>`).join("");
+  }
+
+  function columnas(items) {
+    const max = Math.max(1, ...items.map(i => i.value));
+    return `<div class="cols">${items.map(it => `
+      <div class="col">
+        <span class="cval">${it.value}</span>
+        <div class="cbar" style="height:${it.value / max * 100}%"></div>
+        <span class="cet">${esc(it.label)}</span>
+      </div>`).join("")}</div>`;
+  }
+
+  function construirInforme(a, s) {
+    const hoyTxt = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+    const logo = `<img src="../../BD_CARGABLE/logo.png" alt="" onerror="this.style.display='none'">`;
+    const sinDatos = (lista) => lista.length ? barrasH(lista) : '<p class="pie">Sin datos.</p>';
+    return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Informe de matrículas ${a}</title>
+<style>
+  @page { size: A4 portrait; margin: 1.4cm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #0e1a33;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .membrete { display: flex; align-items: center; gap: 14px; border-bottom: 2pt solid #1f4fb5;
+    padding-bottom: 8px; margin-bottom: 14px; }
+  .membrete img { height: 46px; width: auto; }
+  .membrete h1 { font-size: 15pt; color: #0d2766; }
+  .membrete p { font-size: 10pt; color: #33436a; margin-top: 2px; }
+  .membrete .fecha { margin-left: auto; font-size: 9pt; color: #66738f; }
+  h2 { font-size: 11pt; color: #0d2766; margin: 16px 0 8px; padding-bottom: 3px;
+    border-bottom: .5pt solid #97a6c4; text-transform: uppercase; letter-spacing: .02em; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .card { border: .5pt solid #c6cfdf; border-radius: 6px; padding: 8px; text-align: center; background: #f2f6fe; }
+  .card strong { display: block; font-size: 16pt; color: #0d2766; }
+  .card span { font-size: 8.5pt; color: #33436a; }
+  .fila { display: grid; grid-template-columns: 210px 1fr 40px; align-items: center; gap: 8px; margin: 4px 0; }
+  .etq { font-size: 9pt; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pista { background: #eef2f9; border-radius: 4px; height: 12px; }
+  .barra { background: #1f4fb5; height: 12px; border-radius: 4px; min-width: 2px; }
+  .val { font-size: 9pt; font-weight: 700; text-align: right; }
+  .cols { display: flex; align-items: flex-end; gap: 6px; height: 150px; border-bottom: .5pt solid #97a6c4; }
+  .col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+  .cbar { width: 100%; background: #1f4fb5; border-radius: 4px 4px 0 0; min-height: 2px; }
+  .cval { font-size: 8.5pt; font-weight: 700; margin-bottom: 2px; }
+  .cet { font-size: 8.5pt; margin-top: 4px; }
+  .pie { font-size: 8.5pt; color: #66738f; margin-top: 6px; }
+  .nota { font-size: 9pt; background: #fff6d6; border-left: 3pt solid #ffc20e; padding: 6px 10px; margin-top: 8px; }
+  .doc .barra { background: #ffc20e; }
+  .sec { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+  <header class="membrete">
+    ${logo}
+    <div>
+      <h1>Liceo Eduardo Charme</h1>
+      <p>Informe de matrículas · Año ${a}</p>
+    </div>
+    <span class="fecha">Generado el ${esc(hoyTxt)}</span>
+  </header>
+
+  <section class="sec">
+    <div class="cards">
+      <div class="card"><strong>${s.total}</strong><span>Postulantes</span></div>
+      <div class="card"><strong>${s.matriculados}</strong><span>Matriculados</span></div>
+      <div class="card"><strong>${s.aceptados}</strong><span>Aceptados sin matricular</span></div>
+      <div class="card"><strong>${s.rechazados}</strong><span>Rechazados</span></div>
+      <div class="card"><strong>${s.yaEstudiaban}</strong><span>Ya estudiaban en el liceo</span></div>
+      <div class="card"><strong>${s.conPIE}</strong><span>Con carpeta PIE</span></div>
+    </div>
+    <p class="pie">Primer registro: ${esc(s.primera)} · Último registro: ${esc(s.ultima)}</p>
+  </section>
+
+  <section class="sec">
+    <h2>Embudo de matrícula</h2>
+    ${barrasH(s.embudo)}
+    <p class="pie">Tasa de matrícula: ${s.tasaMatricula}% de los postulantes. De los aceptados, se matriculó el ${s.tasaAceptadosMatriculados}%.</p>
+  </section>
+
+  <section class="sec">
+    <h2>Ingresos por mes de registro</h2>
+    ${columnas(s.meses)}
+  </section>
+
+  <section class="sec">
+    <h2>Matrículas por curso</h2>
+    ${sinDatos(s.porCurso)}
+  </section>
+
+  <section class="sec">
+    <h2>Alumnos por Especialidad</h2>
+    ${sinDatos(s.porEspecialidad)}
+  </section>
+
+  <section class="sec">
+    <h2>Establecimientos de procedencia (top 12)</h2>
+    ${sinDatos(s.porEstablecimiento)}
+  </section>
+
+  <section class="sec">
+    <h2>Comunas de procedencia (top 10)</h2>
+    ${sinDatos(s.porComuna)}
+    <p class="pie">Si aparece "Sin dato", el establecimiento no está en la lista de establecimientos del sistema.</p>
+  </section>
+
+  <section class="sec">
+    <h2>Tipo de establecimiento de procedencia</h2>
+    ${sinDatos(s.porTipo)}
+  </section>
+
+  <section class="sec">
+    <h2>Edad al 31 de marzo</h2>
+    ${sinDatos(s.edades)}
+  </section>
+
+  <section class="sec">
+    <h2>Con quién vive el alumno</h2>
+    ${sinDatos(s.viveCon)}
+  </section>
+
+  <section class="sec doc">
+    <h2>Documentos recibidos</h2>
+    ${s.docs.map(d => `
+      <div class="fila">
+        <span class="etq">${esc(d.label)}</span>
+        <div class="pista"><div class="barra" style="width:${d.pct}%"></div></div>
+        <span class="val">${d.value} (${d.pct}%)</span>
+      </div>`).join("")}
+  </section>
+
+  <p class="nota">Datos que hoy no se registran en el formulario y que sirven para los criterios de prioridad de admisión:
+  sexo, hermanos matriculados en el liceo, e hijos de funcionarios del establecimiento.</p>
+</body>
+</html>`;
+  }
+
+  async function descargarInforme(a) {
+    const datos = datosDeAnio(a);
+    if (!datos.length) return;
+    setEstado(`Preparando informe del año ${a}…`);
+    const mapa = await cargarEstablecimientos();
+    const html = construirInforme(a, estadisticas(datos, mapa, a));
+    const frame = document.createElement("iframe");
+    frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;";
+    document.body.appendChild(frame);
+    const doc = frame.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+    setTimeout(() => {
+      frame.contentWindow.focus();
+      frame.contentWindow.print();
+      setTimeout(() => frame.remove(), 2000);
+    }, 500);
+    setEstado(`Informe del año ${a} listo: en la ventana de impresión elige «Guardar como PDF».`);
+  }
+
+  /* ---------- ELIMINAR AÑO ---------- */
+  function abrirEliminar(a) {
+    aEliminar = a;
+    const n = datosDeAnio(a).length;
+    qs("#md-titulo").textContent = `Eliminar año ${a}`;
+    qs("#md-texto").textContent =
+      `Se eliminarán ${n} postulantes del año ${a}. Esta acción no se puede deshacer. ` +
+      `Se borran uno por uno, así que puede tardar varios minutos.`;
+    const listo = excelDescargado.has(a);
+    qs("#md-input").value = "";
+    qs("#md-input").disabled = !listo;
+    qs("#md-confirmar").disabled = true;
+    qs("#md-aviso-excel").style.display = listo ? "none" : "block";
+    qs("#m-del").classList.add("on");
+    if (listo) qs("#md-input").focus();
+  }
+
+  function cerrarModal() {
+    qs("#m-del").classList.remove("on");
+    aEliminar = null;
+  }
+
+  async function confirmarEliminar() {
+    if (aEliminar === null || ocupado) return;
+    const a = aEliminar;
+    const ids = resumenPorAnio().find(x => x.anio === a)?.ids || [];
+    cerrarModal();
+    ocupado = true;
+    render();
+    let hechos = 0;
+    try {
+      for (const id of ids) {
+        setEstado(`Eliminando el año ${a}… ${hechos + 1} de ${ids.length}`);
+        await BD.eliminarPostulante(id);
+        hechos++;
+      }
+      setEstado(`Año ${a} eliminado (${hechos} postulantes).`);
+    } catch (e) {
+      setEstado(`Se detuvo en ${hechos} de ${ids.length} por un error: ${e.message}. Puedes volver a intentar para terminar.`);
+    } finally {
+      ocupado = false;
+      if (hechos > 0 && enVentana) window.parent.postMessage({ tipo: "datos-cambiados" }, "*");
+      render();
+    }
+  }
+
+  /* ---------- motivo por el que no se puede eliminar un año ---------- */
+  function motivoBloqueo(a) {
+    if (a === Number(BD.config.anioActual))
+      return `El año ${a} es el año activo y no se puede eliminar. Solo se pueden eliminar años anteriores.`;
+    if (!enVentana) return "Para eliminar años, abre esta herramienta desde el Panel Admin.";
+    if (ocupado) return "Hay una eliminación en curso. Espera a que termine.";
+    return "";
+  }
+
+  /* ---------- eventos ---------- */
+  tbody.addEventListener("click", ev => {
+    const ex = ev.target.closest("[data-excel]");
+    if (ex) { descargarExcel(Number(ex.dataset.excel)); return; }
+    const inf = ev.target.closest("[data-informe]");
+    if (inf) { descargarInforme(Number(inf.dataset.informe)); return; }
+    const re = ev.target.closest("[data-eliminar]");
+    if (!re) return;
+    const a = Number(re.dataset.eliminar);
+    if (re.getAttribute("aria-disabled") === "true") { setEstado(motivoBloqueo(a)); return; }
+    abrirEliminar(a);
+  });
+
+  qs("#md-input").addEventListener("input", ev => {
+    qs("#md-confirmar").disabled =
+      !excelDescargado.has(aEliminar) || ev.target.value.trim() !== String(aEliminar);
+  });
+  qs("#md-confirmar").addEventListener("click", confirmarEliminar);
+  qs("#md-cancelar").addEventListener("click", cerrarModal);
+  qs("#md-x").addEventListener("click", cerrarModal);
+  qs("#m-del").addEventListener("click", e => { if (e.target === qs("#m-del")) cerrarModal(); });
+
+  qs("#btn-recargar").addEventListener("click", cargar);
+
+  iconos();
+  cargar();
+})();
+</script>
+</body>
+</html>
