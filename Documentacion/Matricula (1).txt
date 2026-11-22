@@ -1,0 +1,431 @@
+Título: Matricula
+Fecha: 22/10/2026, 14:37:19
+
+================================================================
+MATRÍCULAS · LICEO EDUARDO CHARME
+Documento de requerimientos · v0.4 (borrador)
+Última actualización: 2026-10-22
+================================================================
+
+NOTA
+----
+Este archivo se irá ampliando a medida que cerremos requerimientos.
+No es código: es la fuente de verdad del proyecto.
+
+================================================================
+1. CONTEXTO
+================================================================
+
+- Software LOCAL, empaquetado como .exe con Electron.
+- Repo GitHub de CÓDIGO (este proyecto).
+- Repo GitHub de DATOS (distinto, apuntado por github.js).
+- github.js IDÉNTICO al de SIDER (token, XOR 'CHARME',
+  marcador SIDER-ENC:v1:). No se toca.
+- shared.js base de SIDER + helpers de matrícula.
+- Paleta y estética heredadas de SIDER (navy #1e3a8a / gold
+  #f59e0b, Inter + JetBrains Mono, Lucide, dark mode).
+- Seguridad delegada a Electron + .exe + repo privado.
+  Contraseña de admin hardcoded en JS (aceptado).
+
+ALCANCE (DECISIÓN FIRME)
+------------------------
+Este sistema sirve EXCLUSIVAMENTE para matricular alumnos
+que ingresan a PRIMERO MEDIO. No gestiona 2°, 3° ni 4° Medio.
+Los alumnos ya matriculados en años anteriores dejan de estar
+en este sistema: no hay promoción de curso, no hay historial
+evolutivo del alumno, no hay egresados.
+
+Cada año escolar constituye una "cohorte" independiente:
+  - Cohorte 2027 = todos los que ingresan a 1° Medio en 2027.
+  - Cohorte 2028 = todos los que ingresan a 1° Medio en 2028.
+  - etc.
+Las cohortes no se mezclan en la lógica, aunque comparten el
+mismo archivo datos/postulantes.json (ver §4.2).
+
+================================================================
+2. ESTRUCTURA DE ARCHIVOS
+================================================================
+
+REPO DE CÓDIGO (este):
+  index.html             Formulario de matrícula
+  style.css              Estilos del formulario público
+  github.js              IDÉNTICO al de SIDER (no se toca)
+                         → apunta al REPO DE DATOS
+  shared.js              Base de SIDER + helpers matrícula
+  alumno.js              Bloque 1: datos del alumno
+  apoderado.js           Bloque 2: apoderado titular
+  apoderado-suplente.js  Bloque 3: apoderado suplente
+  reglas.js              Bloque 4: PDF de reglas + términos
+  matricula.js           Bloque 5: matrícula + docs + PDF
+  form.js                Orquestador: valida los 5 bloques,
+                         arma el objeto final y guarda
+  main.js                (Electron) proceso principal
+  package.json           (Electron)
+  assets/
+    reglas.pdf           Términos y condiciones (PDF local)
+    firma.png            Firma del director (imagen)
+  admin/
+    index.html           Panel de administración
+    admin.js             Lógica del panel
+    admin.css            Estilos propios del panel
+
+REPO DE DATOS (distinto, referenciado por github.js):
+  datos/postulantes.json Registros de matrícula (todas las
+                         cohortes; cada registro lleva su año)
+  datos/config.json      Año activo, capacidad por sección,
+                         secciones habilitadas
+
+(usuarios.json se elimina del repo de datos: este proyecto
+no tiene login de usuario final. Único acceso protegido es
+el panel admin con contraseña 2448.)
+
+================================================================
+3. FORMULARIO PÚBLICO (index.html)
+================================================================
+
+Formulario dividido en CINCO bloques visuales (cuadros),
+cada uno con su propio JS. Envío único al final.
+
+  [Bloque 1] Alumno                        → alumno.js
+  [Bloque 2] Apoderado Titular             → apoderado.js
+  [Bloque 3] Apoderado Suplente            → apoderado-suplente.js
+  [Bloque 4] Términos y Condiciones        → reglas.js
+  [Bloque 5] Matrícula, Docs y Firmas      → matricula.js
+
+Orquestación: form.js escucha el submit final, llama a
+validar() y getDatos() de cada bloque, arma el objeto
+completo, calcula sección + N° matrícula, y persiste.
+
+Sin login: app local, operador único (secretaría).
+
+----------------------------------------------------------------
+3.1 BLOQUE 1 · ALUMNO (alumno.js)
+----------------------------------------------------------------
+
+Datos del postulante:
+
+  - Curso:                       FIJO "Primero Medio"
+                                 (texto no editable, solo
+                                 lectura; ver §1 Alcance)
+  - Año escolar:                 selector con año actual + 3
+                                 próximos (ver §4.1)
+  - N° de matrícula:             autoincremental, read-only
+                                 (ver §4.2)
+  - Apellido paterno:            texto, obligatorio
+  - Apellido materno:            texto, obligatorio
+  - Nombres:                     texto, obligatorio
+  - R.U.T:                       texto, validado, obligatorio
+  - Fecha de nacimiento:         date, obligatorio
+  - Vive con:                    selector/opciones — P15
+  - Domicilio:                   texto, obligatorio
+  - Fono:                        texto, obligatorio
+  - Antecedentes médicos:        textarea, opcional — P16
+
+Familia (dentro del bloque Alumno):
+
+  - Padre (nombre):              texto, OPCIONAL
+  - Madre (nombre):              texto, OPCIONAL
+
+----------------------------------------------------------------
+3.2 BLOQUE 2 · APODERADO TITULAR (apoderado.js)
+----------------------------------------------------------------
+
+  - Nombre completo:             obligatorio
+  - R.U.T:                       validado, obligatorio
+  - Fono:                        obligatorio
+  - Domicilio:                   obligatorio
+
+----------------------------------------------------------------
+3.3 BLOQUE 3 · APODERADO SUPLENTE (apoderado-suplente.js)
+----------------------------------------------------------------
+
+  - Nombre completo:             obligatorio
+  - R.U.T:                       validado, obligatorio
+  - Fono:                        obligatorio
+  - Domicilio:                   obligatorio
+
+----------------------------------------------------------------
+3.4 BLOQUE 4 · TÉRMINOS Y CONDICIONES (reglas.js)
+----------------------------------------------------------------
+
+- Visor embebido de assets/reglas.pdf (iframe o embed).
+- Si el PDF NO existe / no carga:
+    Mostrar mensaje exacto:
+    "No está cargada la declaración de compromiso al juramento."
+- Checkbox "Acepto los términos y condiciones" (obligatorio).
+  - Se habilita solo tras abrir/intentar abrir el PDF.
+- Sin aceptación: el envío final queda bloqueado.
+
+----------------------------------------------------------------
+3.5 BLOQUE 5 · MATRÍCULA, DOCUMENTOS Y FIRMAS (matricula.js)
+----------------------------------------------------------------
+
+Parte A — Datos de matrícula (auto-llenados):
+
+  - "Ingreso al Liceo Eduardo Charme el:"
+        [fecha actual Chile] al curso "Primero Medio"
+        — Sección [X]
+        · Fecha:   auto, API Chile (ver §4.1), read-only
+        · Sección: auto-asignada A→B→C según capacidad
+                   (ver §4.3), read-only
+  - N° de matrícula:   visible, read-only
+  - Año escolar:       el seleccionado en Bloque 1
+
+Parte B — Documentos recibidos (todos checkbox):
+
+  a) Certificado de nacimiento
+  b) Certificado de estudio
+  c) Informe de personalidad
+  d) Ficha escolar
+  e) Carpeta PIE
+
+Parte C — Datos de retiro y declaración:
+
+  - "Estudiante retirado el:"    campo fecha — ver P25
+  - Texto fijo (no editable):
+      "Declaro haber recibido los documentos antes señalados"
+  - Cierre:
+      "San Fernando, [día] de [mes] de [año]"
+      (auto, fecha Chile, read-only)
+  - "Firma del Apoderado:"       línea en blanco (para
+                                 firmar impreso)
+  - Firma del director:          imagen assets/firma.png
+                                 embebida en el PDF
+
+Parte D — Acción final:
+
+  - Botón "Guardar como PDF e imprimir"
+      · Genera PDF con todos los datos + firmas
+      · Abre diálogo de impresión (Electron)
+      · (Decisión P18: un botón o dos separados)
+
+================================================================
+4. VALORES AUTO-CALCULADOS
+================================================================
+
+----------------------------------------------------------------
+4.1 AÑO ESCOLAR Y FECHA (API Chile)
+----------------------------------------------------------------
+
+Regla: NO se usa la fecha del computador. Se consulta una API
+externa para obtener la fecha real de Chile.
+
+Proveedores propuestos (en orden de preferencia):
+  1. World Time API
+       http://worldtimeapi.org/api/timezone/America/Santiago
+  2. TimeAPI.io
+       https://timeapi.io/api/Time/current/zone?timeZone=America/Santiago
+  3. Fallback: leer header HTTP "Date" de cualquier respuesta
+     de GitHub (ya estamos conectados).
+  → Si TODAS fallan: mostrar error y NO permitir avanzar
+    (no usar reloj del equipo).
+
+Cálculo del año escolar:
+  Sea Y = año actual en Chile.
+  Opciones mostradas: [Y, Y+1, Y+2, Y+3]
+  Ejemplo si hoy es 2027: [2027, 2028, 2029, 2030]
+  Ejemplo si hoy es 2028: [2028, 2029, 2030, 2031]
+
+Nota: el año seleccionado identifica la COHORTE (no la
+promoción de un alumno). Un alumno matriculado en cohorte
+2027 nunca pasa a cohorte 2028 en este sistema.
+
+----------------------------------------------------------------
+4.2 N° DE MATRÍCULA
+----------------------------------------------------------------
+
+PROPUESTA (necesita confirmar — P19, P20):
+  Formato: "AAAA-N"
+    · AAAA = año escolar seleccionado
+    · N    = correlativo DENTRO de esa cohorte, empieza en 1
+  Ejemplo cohorte 2027: 2027-1, 2027-2, 2027-3, ...
+  Ejemplo cohorte 2028: 2028-1, 2028-2, 2028-3, ... (reinicia)
+
+  Ventajas:
+    · Único a nivel global (dos años no colisionan)
+    · Legible para el admin (se ve el año de ingreso)
+    · Sin necesidad de "resetear" nada al cambiar de año
+
+  Alternativa simple (si se prefiere): N = (máx global) + 1,
+  sin reinicio por año. Más simple pero el N° no dice el año.
+
+  → DECISIÓN REQUERIDA antes de escribir matricula.js.
+
+  Garantía de unicidad: releer postulantes antes de asignar,
+  dentro de guardarConReintento.
+
+----------------------------------------------------------------
+4.3 ASIGNACIÓN DE SECCIÓN (A → B → C)
+----------------------------------------------------------------
+
+- Capacidad por sección configurable en admin (P21).
+  Default propuesto: Sección A = máx 30, Sección B = máx 30,
+  Sección C = máx 30, Sección D = máx 30.
+- Al matricular:
+    1. Se recorre la lista de secciones habilitadas
+       (A, B, C, ...) en orden.
+    2. Se cuenta cuántos matriculados HAY EN LA MISMA
+       COHORTE (mismo año) para cada sección.
+    3. Se asigna la primera sección con cupo disponible.
+    4. Si todas están llenas: error (o lista de espera — P22).
+- La capacidad aplica POR COHORTE (cada año tiene sus
+  propias A/B/C con sus propios 30 cupos).
+- El admin puede sobrescribir la sección manualmente (P23).
+
+================================================================
+5. GENERACIÓN DE PDF E IMPRESIÓN
+================================================================
+
+Botón "Guardar como PDF e imprimir":
+- Genera PDF con:
+  · Encabezado: Liceo Eduardo Charme / SIDER Matrículas
+  · Datos del alumno (todo el bloque 1)
+  · Datos de familia (padre, madre)
+  · Apoderado titular + suplente
+  · Datos de matrícula: N°, fecha, curso, sección, año
+  · Documentos recibidos (checks marcados)
+  · Declaración de retiro y recepción
+  · Cierre "San Fernando, [fecha]"
+  · Firma del Apoderado (línea en blanco)
+  · Firma del Director (assets/firma.png)
+- El PDF NO se guarda en el repo. Se descarga/abre en el
+  equipo del operador (Electron).
+- El PDF es el único lugar donde aparecen las firmas; en
+  datos/postulantes.json solo se guardan los datos planos.
+- Librería propuesta: jsPDF + html2canvas, o impresión nativa
+  de Electron con `webContents.print()`. — P18
+
+================================================================
+6. PANEL DE ADMINISTRACIÓN (admin/index.html)
+================================================================
+
+Acceso:
+  - Contraseña fija: 2448 (hardcoded, aceptado por Electron).
+
+Funciones:
+  - Tabla con TODOS los postulantes (todas las cohortes).
+  - Filtro por año escolar (cohorte) — muy importante ahora
+    que el archivo acumula múltiples años.
+  - Buscador y filtros básicos.
+  - Ver detalle (modal).
+  - Editar estado del postulante (catálogo — P24).
+  - Configurar capacidad por sección (P21).
+  - Exportar a Excel (.xlsx) — filtrable por cohorte.
+  - Exportar a PDF: estadísticas + datos (P8 se mantiene).
+  - Forzar sección manual de un postulante (P23).
+
+NOTA: no hay opción "curso por defecto" en admin, porque el
+curso es fijo (Primero Medio). Solo se configura capacidad
+por sección y secciones habilitadas.
+
+================================================================
+7. FLUJO DE DATOS
+================================================================
+
+1. Secretaría abre la app (.exe).
+2. Consulta API Chile → fija año escolar y fecha.
+3. Selecciona el año escolar (cohorte) en Bloque 1.
+4. Llena Bloques 1–3.
+5. Abre PDF de reglas y acepta términos (Bloque 4).
+6. Al enviar (Bloque 5):
+   - Calcula N° matrícula (AAAA-N, ver §4.2)
+   - Calcula sección con cupo dentro de esa cohorte
+   - Guarda en datos/postulantes.json (encriptado)
+7. Se habilita "Guardar como PDF e imprimir".
+8. Admin entra con 2448, filtra por año, gestiona/exporta.
+
+================================================================
+8. PENDIENTES / PREGUNTAS ABIERTAS
+================================================================
+
+RESUELTAS EN v0.4:
+  P14. Curso por defecto → FIJO "Primero Medio" (§1 Alcance).
+  P20. Cambio de año → sin promoción; cada año es cohorte
+       independiente. Postulantes de cohortes viejas NO se
+       tocan. Se necesita decidir P19 (formato del N°).
+  - Curso por defecto en admin → eliminado (curso fijo).
+
+SIGUEN ABIERTAS:
+
+Estructura:
+  P13. ¿5 archivos JS (alumno, apoderado, apoderado-suplente,
+       reglas, matricula) + form.js orquestador? (Recomendado.)
+
+Modelo de datos:
+  P15. "Vive con": ¿opciones fijas (madre, padre, ambos,
+       otro) o texto libre?
+  P16. "Antecedentes médicos": ¿texto libre o estructura
+       (alergias, medicamentos, etc.)?
+  P17. Padre/Madre: ¿dentro del bloque Alumno? (Propuesto.)
+  P19. N° de matrícula: ¿formato "AAAA-N" (recomendado, ver
+       §4.2) o correlativo global continuo sin año?
+
+Panel admin:
+  P21. Capacidad por sección: ¿default 30 uniforme? ¿O
+       diferenciada (A=30, B=28, ...)? ¿Cuántas secciones
+       habilitar (solo A? A+B? A+B+C+D)?
+  P22. Si todas las secciones están llenas: ¿error, lista
+       de espera, o abrir sección nueva automática?
+  P23. ¿Admin puede mover manualmente a un postulante de
+       sección, o solo auto-asignación?
+  P24. Catálogo exacto de estados del postulante en admin
+       (postulante, recibido, aceptado, matriculado, etc.).
+
+Bloque Matrícula:
+  P25. "Estudiante retirado el:" — ¿es la fecha en que el
+       alumno se retira del Liceo (ej. abandona a mitad de
+       año), o la fecha en que se retiró de su colegio
+       anterior (dato histórico de ingreso)?
+  P26. Firma del director: ¿assets/firma.png fija, o varía
+       por año/documento?
+
+PDF:
+  P18. ¿Un botón "Guardar como PDF e imprimir" o dos
+       separados? ¿Librería jsPDF o print() de Electron?
+
+Electron:
+  P27. ¿Nombre del .exe, icono, ventana fija o maximizable?
+       (Auto-update descartable en LAN.)
+
+================================================================
+9. HISTORIAL DE CAMBIOS
+================================================================
+
+v0.4 · 2026-10-22
+  - CAMBIO ESTRUCTURAL: sistema es solo para Primero Medio.
+  - Eliminada idea de promoción de curso e histórico evolutivo
+    del alumno. Cada año = cohorte independiente.
+  - Eliminado usuarios.json del repo de datos (no hay login
+    de usuario final en este proyecto).
+  - Curso fijo "Primero Medio" (no configurable).
+  - Sección y N° matrícula se calculan DENTRO de la cohorte
+    (año seleccionado).
+  - Agregado form.js como orquestador de los 5 bloques.
+  - Panel admin: filtro por año/cohorte obligatorio;
+    eliminada opción "curso por defecto".
+  - N° matrícula propuesto con formato "AAAA-N" (P19).
+  - P14 y P20 cerradas.
+  - Registradas P13, P15–P19, P21–P27.
+
+v0.3 · 2026-10-22
+  - Bloque Alumno: campos exactos.
+  - Padre/Madre opcionales dentro del bloque Alumno.
+  - Apoderados titular y suplente definidos.
+  - Bloque Reglas con mensaje fallback.
+  - Nuevo Bloque Matrícula con docs, retiro, firmas.
+  - Reglas auto-calculadas: año vía API Chile, N° matrícula,
+    sección A→B→C por capacidad.
+  - PDF con firma director + línea firma apoderado.
+
+v0.2 · 2026-10-21
+  - Aclarado: software local Electron, datos en repo
+    separado, contraseña hardcoded.
+
+v0.1 · 2026-10-21
+  - Creación inicial.
+
+================================================================
+FIN DEL DOCUMENTO
+================================================================
+
+
