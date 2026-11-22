@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Matrículas · Liceo Eduardo Charme</title>
+<link rel="icon" type="image/png" href="BD_CARGABLE/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
@@ -18,19 +19,27 @@
 </head>
 <body>
 
+<!-- Membrete que solo se muestra al imprimir (oculto en pantalla) -->
+<div id="membrete-impresion" class="membrete-impresion" style="display:none;">
+  <img src="BD_CARGABLE/logo.png" alt="Logo Liceo Eduardo Charme" id="logo-impresion" onerror="this.style.display='none'">
+  <div class="membrete-texto">
+    <h1>Liceo Eduardo Charme</h1>
+    <p>San Fernando · Chile</p>
+  </div>
+</div>
+
 <header class="topbar">
   <div class="topbar-marca">
-    <div class="topbar-logo"><i data-lucide="graduation-cap"></i></div>
+    <div class="topbar-logo">
+      <img src="BD_CARGABLE/logo.png" alt="Logo Liceo Eduardo Charme" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+      <i data-lucide="graduation-cap" style="display:none;"></i>
+    </div>
     <div class="topbar-marca-texto">
       <strong>Liceo Eduardo Charme</strong>
       <span>San Fernando · Chile</span>
     </div>
   </div>
   <div class="topbar-spacer"></div>
-  <div id="estado-conexion" class="estado-conexion"></div>
-  <button id="btn-conectar" type="button" class="btn-conexion">
-    <i data-lucide="folder-open"></i> Conectar carpeta
-  </button>
   <button id="btn-tema" type="button" class="btn-tema" aria-label="Cambiar tema claro/oscuro" title="Cambiar tema">
     <i data-lucide="moon"></i>
   </button>
@@ -40,10 +49,13 @@
 <main class="main">
   <div class="panel-cabecera">
     <h1><i data-lucide="file-pen-line"></i> Formulario de Matrícula</h1>
-    <p>Ingreso a <strong>Primero Medio</strong> · Complete todos los bloques para registrar al alumno</p>
+    <p>Complete todos los bloques para registrar al alumno</p>
   </div>
 
-  <form id="form-matricula" novalidate>
+  <!-- LOBBY: pregunta curso y modo antes de mostrar el formulario -->
+  <div id="lobby" class="lobby-container"></div>
+
+  <form id="form-matricula" class="form-oculto" novalidate>
 
     <!-- BLOQUE 1 -->
     <section class="bloque" id="bloque-alumno">
@@ -58,8 +70,8 @@
         <div class="grid-3">
           <div class="campo">
             <label>Curso</label>
-            <input type="text" value="Primero Medio" readonly>
-            <div class="campo-ayuda"><i data-lucide="info"></i> Fijo · Solo ingreso a 1° Medio</div>
+            <input type="text" id="a-curso" value="Primero Medio" readonly>
+            <div class="campo-ayuda"><i data-lucide="info"></i> Definido en el lobby inicial</div>
           </div>
           <div class="campo">
             <label>Año escolar</label>
@@ -70,6 +82,18 @@
             <input type="text" id="a-numero" class="auto" readonly value="—">
             <div class="campo-ayuda"><i data-lucide="hash"></i> Autoincremental</div>
           </div>
+        </div>
+
+        <div class="campo full" id="campo-especialidad" style="display:none;">
+          <label>Especialidad <span class="req">*</span></label>
+          <select id="a-especialidad">
+            <option value="">Seleccionar…</option>
+            <option>Administración</option>
+            <option>Enfermería</option>
+            <option>Programación</option>
+            <option>Turismo</option>
+          </select>
+          <div class="campo-ayuda"><i data-lucide="info"></i> Obligatorio para estudiantes de 3° y 4° medio</div>
         </div>
 
         <div class="grid-3">
@@ -94,7 +118,7 @@
           </div>
           <div class="campo">
             <label>Fecha de nacimiento <span class="req">*</span></label>
-            <input type="date" id="a-nacimiento">
+            <input type="text" id="a-nacimiento" class="fecha-real" hidden readonly tabindex="-1">
           </div>
         </div>
 
@@ -120,10 +144,9 @@
           <input type="text" id="a-domicilio" placeholder="Av. Ejemplo 1234, Villa Los Aromos, San Fernando">
         </div>
 
-        <div class="campo full">
-          <label>Establecimiento anterior <span class="opt">(opcional)</span></label>
-          <input type="text" id="a-establecimiento" list="lista-establecimientos" placeholder="Escribe para buscar…">
-          <datalist id="lista-establecimientos"></datalist>
+        <div class="campo full" id="campo-establecimiento">
+          <label id="label-establecimiento">Establecimiento anterior <span class="req">*</span></label>
+          <input type="text" id="a-establecimiento" autocomplete="off" name="establecimiento-anterior" placeholder="Escribe para buscar…">
         </div>
 
         <div class="campo full">
@@ -225,7 +248,7 @@
           <div class="pdf-toolbar">
             <i data-lucide="file-text"></i>
             <strong>reglas.pdf</strong>
-            <span class="pdf-paginas">assets/</span>
+            <span class="pdf-paginas">BD_CARGABLE/</span>
           </div>
           <div class="pdf-pagina">
             <h3>Declaración de Compromiso</h3>
@@ -264,8 +287,7 @@
           <div>
             <strong>Ingreso</strong> al Liceo Eduardo Charme el
             <strong id="mat-fecha-texto">—</strong>
-            al curso <strong>Primero Medio</strong> — Sección
-            <span class="pill" id="mat-seccion">—</span>
+            al curso <strong id="mat-curso">Primero Medio</strong>
           </div>
           <div style="font-size:0.875rem;color:var(--c-n-700);">
             N° de matrícula: <strong id="mat-numero" style="font-family:var(--font-mono);color:var(--c-gold-800);">—</strong>
@@ -288,7 +310,7 @@
 
         <div class="campo full">
           <label>Estudiante retirado el <span class="opt">(fecha del colegio anterior)</span></label>
-          <input type="date" id="m-retiro">
+          <input type="text" id="m-retiro" class="fecha-real" hidden readonly tabindex="-1">
         </div>
 
         <div class="declaracion">Declaro haber recibido los documentos antes señalados.</div>
@@ -316,8 +338,11 @@
       <button type="button" class="btn btn-secundario" id="btn-cancelar">
         <i data-lucide="x"></i> Cancelar
       </button>
+      <button type="button" class="btn btn-secundario" id="btn-pdf">
+        <i data-lucide="file-down"></i> Guardar como PDF
+      </button>
       <button type="submit" class="btn btn-primario" id="btn-enviar" disabled>
-        <i data-lucide="file-down"></i> Guardar matrícula
+        <i data-lucide="save"></i> Guardar datos y salir
       </button>
     </div>
   </form>
@@ -344,6 +369,12 @@
     pintarIcono();
   })();
 </script>
-<script type="module" src="Form.js"></script>
+
+<!-- Scripts clásicos (sin type="module") para que funcionen con doble clic -->
+<script src="ScriptBD.js"></script>
+<script src="buscadorEstablecimientos.js"></script>
+<script src="selectorFecha.js"></script>
+<script src="start.js"></script>
+<script src="Form.js"></script>
 </body>
 </html>
